@@ -1,6 +1,6 @@
 #u {
   color: #999;
-  padding: 4px 10px 5px 0;
+  padding: 6px 10px 5px 0;
   text-align: right;
 }
 
@@ -91,8 +91,62 @@ input, button, select, textarea {
 .nav {
   float: right;
   display: block;
-  margin: 2px 10px 0 8px;
+  margin: 6px 10px 0 8px;
   position: relative;
   line-height: 1;
 }
 
+#userpic {
+  display:inline;
+}
+#sinalogin {
+  display:inline;
+}
+#username {
+  display:inline;
+}
+
+.highlightText {
+  width: 61.8%;
+  margin-left:11.8%;  
+  position: relative;
+  font: normal 20px 'calibri';
+  color: #999;
+  padding: 20px;
+  background-color: #F3F8E4;
+  border-radius: 10px;
+  moz-border-radius: 10px;
+  -webkit-border-radius: 10px;
+  border-top: 1px #D1DEB6 solid;
+  border-left: 1px #D1DEB6 solid;
+}
+
+.sinalogin a{ width:86px; height:18px;  background:url(../../loginbtn_04.png); text-decoration:none; background:red;}
+
+#home {border:1px solid #dddddd; border-radius:4px; background:#fff; }
+#home:hover{ border:1px solid #cccccc; cursor:pointer; color:#ccc; background:#fff; }
+
+.wb-k{ border:2px solid #73004f; padding:5px;  border-radius:10px; width:813px; margin:0px auto; margin-top:24px;}
+
+.highlightText{ margin:0px; width:770px; margin-bottom:14px; margin-top:8px;}
+
+.alert {
+  width: 49%;
+  margin-left:23.5%;
+  cursor: pointer;
+  padding: 8px 35px 8px 14px;
+  margin-bottom: 18px;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+  background-color: #FCF8E3;
+  border: 1px solid #FBEED5;
+  -webkit-border-radius: 4px;
+  -moz-border-radius: 4px;
+  border-radius: 4px;
+  color: #C09853;
+}
+
+.alert-info {
+  background-color: #D9EDF7;
+  border-color: #BCE8F1;
+  color: #3A87AD;
+}

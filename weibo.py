@@ -8,10 +8,7 @@ __author__ = 'Liao Xuefeng (askxuefeng@gmail.com)'
 Python client SDK for sina weibo API using OAuth 2.
 '''
 
-try:
-    import json
-except ImportError:
-    import simplejson as json
+import simplejson as json
 import time
 import urllib
 import urllib2
