@@ -37,8 +37,12 @@ def search():
         except:
             flash(u"您输入的昵称不存在,请重新输入")
             return redirect(url_for('index'))
-        return json.dumps(target_user)
-        return render_template('simple.html', btnuserpicvisible='inline', btnloginvisible='none', user=user)
+        try:
+            statuses = client.statuses__user_timeline(uid=target_user["id"], count=10)["statuses"]
+        except:
+            statuses = []
+        #return json.dumps(statuses)
+        return render_template('weibolist.html', btnuserpicvisible='inline', btnloginvisible='none', user=user, statuses=statuses)
 
     return redirect(url_for('login'))
 

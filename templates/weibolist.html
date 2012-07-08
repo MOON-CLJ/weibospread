@@ -3,12 +3,16 @@
   <div class="container">
     <div id="weibos">
       <div class="wb-k">
-    	<div class="highlightText">
-       	  <h3 style="">Lots More</h3><p>Text</p>
-       	</div>
-     	<div class="highlightText">
-       	  <h3 style="">Lots More</h3><p>Text</p>
-       	</div>
+	{% if statuses %}
+	  {% for status in statuses %}
+	    <div class="highlightText">
+       	      <h3 style="">{{ status["text"] }}</h3>
+	      {% if "retweeted_status" in status %}
+		<p>{{ status.retweeted_status.text }}</p>
+	      {% endif %}
+       	    </div>
+	  {% endfor %}
+	{% endif %}
       </div>
     </div>
   </div> <!-- /container -->
