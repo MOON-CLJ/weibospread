@@ -121,12 +121,21 @@ input, button, select, textarea {
   border-left: 1px #D1DEB6 solid;
 }
 
+.statustitle {
+  color: #0388A6; 
+}
+
+.statuscontent {
+  font-size: 18px; 
+  line-height: 30px;
+}
+
 .sinalogin a{ width:86px; height:18px;  background:url(../../loginbtn_04.png); text-decoration:none; background:red;}
 
 #home {border:1px solid #dddddd; border-radius:4px; background:#fff; }
 #home:hover{ border:1px solid #cccccc; cursor:pointer; color:#ccc; background:#fff; }
 
-.wb-k{ border:2px solid #73004f; padding:5px;  border-radius:10px; width:813px; margin:0px auto; margin-top:24px;}
+.wb-k{ border:2px solid #a4b084; padding:5px;  border-radius:10px; width:813px; margin:0px auto; margin-top:24px;}
 
 .highlightText{ margin:0px; width:770px; margin-bottom:14px; margin-top:8px;}
 
