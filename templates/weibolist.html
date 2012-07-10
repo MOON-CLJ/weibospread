@@ -6,9 +6,11 @@
 	{% if statuses %}
 	  {% for status in statuses %}
 	    <div class="highlightText">
-       	      <h3 style="">{{ status["text"] }}</h3>
+	      <a href="/graph?id={{ status.id }}">
+	        <h3 class="statustitle">{{ status["text"] }}</h3>
+	      </a>
 	      {% if "retweeted_status" in status %}
-		<p>{{ status.retweeted_status.text }}</p>
+		<p class="statuscontent">{{ status.retweeted_status.text }}</p>
 	      {% endif %}
        	    </div>
 	  {% endfor %}
