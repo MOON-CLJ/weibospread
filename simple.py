@@ -47,6 +47,17 @@ def search():
     return redirect(url_for('login'))
 
 
+def dps_graph(simple_graph, relation_links, repost_users, now, now_node):
+    if now_node == None:
+        simple_graph = {"name": repost_users[0]["name"], "id": repost_users[0]["id"], "repost_users": []}
+        now_node = simple_graph["repost_users"]
+    for link in relation_links[now]:
+        now_node.append({"name": repost_users[link["index"]]["name"], "id": repost_users[link["index"]]["id"], "repost_users": []})
+        simple_graph, relation_links, repost_users = dps_graph(simple_graph, relation_links, repost_users, link["index"], now_node[-1]["repost_users"])
+
+    return simple_graph, relation_links, repost_users
+
+
 @app.route('/graph')
 def graph():
     if "uid" in session:
@@ -68,18 +79,24 @@ def graph():
         repost_users = []
         repost_users.append({"name": source_user["name"], "id": source_user["id"]})
         relation_links = [[]]
+        """
         print total_number
         print source_user["name"]
         print source_user["id"]
+        """
 
         reposts["reposts"].reverse()
-        for repost in reposts["reposts"]:
+        for index in xrange(len(reposts["reposts"])):
+            repost = reposts["reposts"][index]
+            """
             print "<-------------------------------------------------------->"
             print repost["text"]
             print repost["user"]["id"]
             print repost["user"]["screen_name"]
-
+            """
             repost_userinfo = {"id": repost["user"]["id"], "name": repost["user"]["screen_name"]}
+            repost_info = {"index": index + 1}
+
             relation_links.append([])
 
             repost_user = re.findall(r'//@(\S+?):', repost["text"])
@@ -90,18 +107,24 @@ def graph():
                     if repost_users[temp_len - 1 - i]["name"] == repost_user[0]:
 #                        print repost['text']
                         flag = False
-                        relation_links[temp_len - 1 - i].append(repost_userinfo)
+                        relation_links[temp_len - 1 - i].append(repost_info)
                         break
                 if not flag:
                     repost_users.append(repost_userinfo)
                     continue
 
-            relation_links[0].append(repost_userinfo)
+            relation_links[0].append(repost_info)
             repost_users.append(repost_userinfo)
-
+        """
         print "relation_links", json.dumps(relation_links, indent=4)
         print "repost_users", json.dumps(repost_users, indent=4)
-        return escape(json.dumps(json.loads(json.dumps(reposts)), indent=4))
+        """
+
+        simple_graph = {}
+        simple_graph, relation_links, repost_users = dps_graph(simple_graph, relation_links, repost_users, 0, None)
+        print json.dumps(simple_graph, indent=4)
+
+        return json.dumps(simple_graph, indent=4)
 
     return redirect(url_for('login'))
 
