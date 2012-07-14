@@ -18,8 +18,9 @@ CALLBACK_URL = 'http://127.0.0.1:5000/callback'
 @app.route('/')
 def index():
     if "uid" in session:
-        user = mongo.db.users.find_one_or_404({"uid": session["uid"]})
-        return render_template('simple.html', btnuserpicvisible='inline', btnloginvisible='none', user=user)
+        screen_name = session["screen_name"]
+        profile_image_url = session["profile_image_url"]
+        return render_template('simple.html', btnuserpicvisible='inline', btnloginvisible='none', screen_name=screen_name, profile_image_url=profile_image_url)
 
     return redirect(url_for('login'))
 
@@ -42,7 +43,10 @@ def search():
             statuses = client.statuses__user_timeline(uid=target_user["id"], count=10)["statuses"]
         except:
             statuses = []
-        return render_template('weibolist.html', btnuserpicvisible='inline', btnloginvisible='none', user=user, statuses=statuses)
+
+        screen_name = session["screen_name"]
+        profile_image_url = session["profile_image_url"]
+        return render_template('weibolist.html', btnuserpicvisible='inline', btnloginvisible='none', screen_name=screen_name, profile_image_url=profile_image_url, statuses=statuses)
 
     return redirect(url_for('login'))
 
@@ -124,7 +128,9 @@ def graph():
         simple_graph, relation_links, repost_users = dps_graph(simple_graph, relation_links, repost_users, 0, None)
         print json.dumps(simple_graph, indent=4)
 
-        return json.dumps(simple_graph, indent=4)
+        screen_name = session["screen_name"]
+        profile_image_url = session["profile_image_url"]
+        return render_template('graph.html', btnuserpicvisible='inline', btnloginvisible='none', screen_name=screen_name, profile_image_url=profile_image_url)
 
     return redirect(url_for('login'))
 
@@ -150,6 +156,8 @@ def callback():
         profile_image_url = userinfo["profile_image_url"]
         mongo.db.users.update({"uid": str(uid)}, {"$set": {"uid": str(uid), "access_token": access_token, "expires_in": expires_in, "screen_name": screen_name, "profile_image_url": profile_image_url}}, upsert=True, safe=True)
         session['uid'] = str(uid)
+        session['screen_name'] = screen_name
+        session["profile_image_url"] = profile_image_url
         return redirect(url_for('index'))
     except Exception:
         flash(u'获取用户微博信息没有成功')
