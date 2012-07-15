@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from flask import Flask
-from flask import render_template, request, session, redirect, url_for, escape, flash
+from flask import render_template, request, session, redirect, url_for, flash, jsonify
 from flask.ext.pymongo import PyMongo
 from weibo import APIClient
 import simplejson as json
@@ -54,83 +54,92 @@ def search():
 def dps_graph(simple_graph, relation_links, repost_users, now, now_node):
     if now_node == None:
         simple_graph = {"name": repost_users[0]["name"], "id": repost_users[0]["id"], "repost_users": []}
-        now_node = simple_graph["repost_users"]
+        now_node = simple_graph
     for link in relation_links[now]:
-        now_node.append({"name": repost_users[link["index"]]["name"], "id": repost_users[link["index"]]["id"], "repost_users": []})
-        simple_graph, relation_links, repost_users = dps_graph(simple_graph, relation_links, repost_users, link["index"], now_node[-1]["repost_users"])
+        now_node["repost_users"].append({"name": repost_users[link["index"]]["name"], "id": repost_users[link["index"]]["id"], "repost_users": []})
+        simple_graph, relation_links, repost_users = dps_graph(simple_graph, relation_links, repost_users, link["index"], now_node["repost_users"][-1])
 
+    if len(relation_links[now]) == 0:
+        del now_node["repost_users"]
     return simple_graph, relation_links, repost_users
+
+
+@app.route('/status')
+def status():
+    user = mongo.db.users.find_one_or_404({"uid": session["uid"]})
+    client = APIClient(app_key=APP_KEY, app_secret=APP_SECRET, redirect_uri=CALLBACK_URL)
+    client.set_access_token(user["access_token"], user["expires_in"])
+
+    id = request.args.get('id', '')
+
+    try:
+        reposts = client.statuses__repost_timeline(id=int(id), count=200)
+        source_user = client.statuses__show(id=int(id))["user"]
+    except:
+        flash(u"获取微博的转发信息失败")
+        return redirect(url_for('index'))
+
+    #print json.dumps(json.loads(json.dumps(reposts)), indent=4)
+    #        for username in re.findall(r'//@(\S+?):', text):
+    #total_number = reposts["total_number"]
+    repost_users = []
+    repost_users.append({"name": source_user["name"], "id": source_user["id"]})
+    relation_links = [[]]
+    """
+    print total_number
+    print source_user["name"]
+    print source_user["id"]
+    """
+
+    reposts["reposts"].reverse()
+    for index in xrange(len(reposts["reposts"])):
+        repost = reposts["reposts"][index]
+        """
+        print "<-------------------------------------------------------->"
+        print repost["text"]
+        print repost["user"]["id"]
+        print repost["user"]["screen_name"]
+        """
+        repost_userinfo = {"id": repost["user"]["id"], "name": repost["user"]["screen_name"]}
+        repost_info = {"index": index + 1}
+
+        relation_links.append([])
+
+        repost_user = re.findall(r'//@(\S+?):', repost["text"])
+        if len(repost_user):
+            flag = True
+            temp_len = len(repost_users)
+            for i in xrange(temp_len):
+                if repost_users[temp_len - 1 - i]["name"] == repost_user[0]:
+#                        print repost['text']
+                    flag = False
+                    relation_links[temp_len - 1 - i].append(repost_info)
+                    break
+            if not flag:
+                repost_users.append(repost_userinfo)
+                continue
+
+        relation_links[0].append(repost_info)
+        repost_users.append(repost_userinfo)
+    """
+    print "relation_links", json.dumps(relation_links, indent=4)
+    print "repost_users", json.dumps(repost_users, indent=4)
+    """
+
+    simple_graph = {}
+    simple_graph, relation_links, repost_users = dps_graph(simple_graph, relation_links, repost_users, 0, None)
+    print json.dumps(simple_graph, indent=4)
+    return jsonify(simple_graph)
 
 
 @app.route('/graph')
 def graph():
     if "uid" in session:
-        user = mongo.db.users.find_one_or_404({"uid": session["uid"]})
-        client = APIClient(app_key=APP_KEY, app_secret=APP_SECRET, redirect_uri=CALLBACK_URL)
-        client.set_access_token(user["access_token"], user["expires_in"])
-
         id = request.args.get('id', '')
-        try:
-            reposts = client.statuses__repost_timeline(id=int(id), count=200)
-            source_user = client.statuses__show(id=int(id))["user"]
-        except:
-            flash(u"获取微博的转发信息失败")
-            return redirect(url_for('index'))
-
-        #print json.dumps(json.loads(json.dumps(reposts)), indent=4)
-        #        for username in re.findall(r'//@(\S+?):', text):
-        total_number = reposts["total_number"]
-        repost_users = []
-        repost_users.append({"name": source_user["name"], "id": source_user["id"]})
-        relation_links = [[]]
-        """
-        print total_number
-        print source_user["name"]
-        print source_user["id"]
-        """
-
-        reposts["reposts"].reverse()
-        for index in xrange(len(reposts["reposts"])):
-            repost = reposts["reposts"][index]
-            """
-            print "<-------------------------------------------------------->"
-            print repost["text"]
-            print repost["user"]["id"]
-            print repost["user"]["screen_name"]
-            """
-            repost_userinfo = {"id": repost["user"]["id"], "name": repost["user"]["screen_name"]}
-            repost_info = {"index": index + 1}
-
-            relation_links.append([])
-
-            repost_user = re.findall(r'//@(\S+?):', repost["text"])
-            if len(repost_user):
-                flag = True
-                temp_len = len(repost_users)
-                for i in xrange(temp_len):
-                    if repost_users[temp_len - 1 - i]["name"] == repost_user[0]:
-#                        print repost['text']
-                        flag = False
-                        relation_links[temp_len - 1 - i].append(repost_info)
-                        break
-                if not flag:
-                    repost_users.append(repost_userinfo)
-                    continue
-
-            relation_links[0].append(repost_info)
-            repost_users.append(repost_userinfo)
-        """
-        print "relation_links", json.dumps(relation_links, indent=4)
-        print "repost_users", json.dumps(repost_users, indent=4)
-        """
-
-        simple_graph = {}
-        simple_graph, relation_links, repost_users = dps_graph(simple_graph, relation_links, repost_users, 0, None)
-        print json.dumps(simple_graph, indent=4)
 
         screen_name = session["screen_name"]
         profile_image_url = session["profile_image_url"]
-        return render_template('graph.html', btnuserpicvisible='inline', btnloginvisible='none', screen_name=screen_name, profile_image_url=profile_image_url)
+        return render_template('graph.html', btnuserpicvisible='inline', btnloginvisible='none', screen_name=screen_name, profile_image_url=profile_image_url, id=id)
 
     return redirect(url_for('login'))
 

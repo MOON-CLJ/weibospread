@@ -8,40 +8,41 @@
   <script type="text/javascript">
 
     var w = 960,
-      h = 2000,
+      h = 0,
       i = 0,
       root;
 
-    var tree = d3.layout.tree()
-      .size([h, w - 160]);
+    var tree;
+    var diagonal;
+    var vis;
 
-    var diagonal = d3.svg.diagonal()
-      .projection(function(d) { return [d.y, d.x]; });
-
-    var vis = d3.select("#body").append("svg:svg")
-      .attr("width", w)
-      .attr("height", h)
-    .append("svg:g")
-      .attr("transform", "translate(40, 0)");
-
-    d3.json("/static/flare.json", function(json) {
+    d3.json("/status?id={{ id }}", function(json) {
       root = json;
+      h = json.repost_users.length * 200;
+
+      tree = d3.layout.tree()
+        .size([h, w]);
+
+      diagonal = d3.svg.diagonal()
+        .projection(function(d) { return [d.y, d.x]; });
+
+      vis = d3.select("#body").append("svg:svg")
+        .attr("width", w)
+        .attr("height", h)
+        .append("svg:g")
+        .attr("transform", "translate(100, 0)");
+
       root.x0 = h / 2;
       root.y0 = 0;
 
       function toggleAll(d) {
-        if (d.children) {
-          d.children.forEach(toggleAll);
-          toggle(d);
+        if (d.repost_users) {
+          d.repost_users.forEach(toggleAll);
         }
       }
 
       // Initialize the display to show a few nodes.
-      root.children.forEach(toggleAll);
-      toggle(root.children[1]);
-      toggle(root.children[1].children[2]);
-      toggle(root.children[9]);
-      toggle(root.children[9].children[0]);
+      root.repost_users.forEach(toggleAll);
 
       update(root);
     });
@@ -67,12 +68,12 @@
 
       nodeEnter.append("svg:circle")
           .attr("r", 1e-6)
-          .style("fill", function(d) { return d._children ? "lightsteelblue" : "#fff"; });
+          .style("fill", function(d) { return d._repost_users ? "lightsteelblue" : "#fff"; });
 
       nodeEnter.append("svg:text")
-          .attr("x", function(d) { return d.children || d._children ? -10 : 10; })
+          .attr("x", function(d) { return d.repost_users || d._repost_users ? -10 : 10; })
           .attr("dy", ".35em")
-          .attr("text-anchor", function(d) { return d.children || d._children ? "end" : "start"; })
+          .attr("text-anchor", function(d) { return d.repost_users || d._repost_users ? "end" : "start"; })
           .text(function(d) { return d.name; })
           .style("fill-opacity", 1e-6);
 
@@ -83,7 +84,7 @@
 
       nodeUpdate.select("circle")
           .attr("r", 4.5)
-          .style("fill", function(d) { return d._children ? "lightsteelblue" : "#fff"; });
+          .style("fill", function(d) { return d._repost_users ? "lightsteelblue" : "#fff"; });
 
       nodeUpdate.select("text")
           .style("fill-opacity", 1);
@@ -138,15 +139,14 @@
 
     // Toggle children.
     function toggle(d) {
-      if (d.children) {
-        d._children = d.children;
-        d.children = null;
+      if (d.repost_users) {
+        d._repost_users = d.repost_users;
+        d.repost_users = null;
       } else {
-        d.children = d._children;
-        d._children = null;
+        d.repost_users = d._repost_users;
+        d._repost_users = null;
       }
     }
 
-    d3.select(self.frameElement).style("height", "2000px"); 
   </script>
 {% endblock %}

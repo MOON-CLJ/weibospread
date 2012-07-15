@@ -6,7 +6,7 @@ body {
 }
 
 #body {
-  height: 2000px;
+  height: auto;
 }
 
 #chart, #header, #footer {
