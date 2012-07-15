@@ -18,7 +18,7 @@
 
     d3.json("/status?id={{ id }}", function(json) {
       root = json;
-      h = json.repost_users.length * 200;
+      h = json.children.length * 200;
 
       tree = d3.layout.tree()
         .size([h, w]);
@@ -36,13 +36,13 @@
       root.y0 = 0;
 
       function toggleAll(d) {
-        if (d.repost_users) {
-          d.repost_users.forEach(toggleAll);
+        if (d.children) {
+          d.children.forEach(toggleAll);
         }
       }
 
       // Initialize the display to show a few nodes.
-      root.repost_users.forEach(toggleAll);
+      root.children.forEach(toggleAll);
 
       update(root);
     });
@@ -68,12 +68,12 @@
 
       nodeEnter.append("svg:circle")
           .attr("r", 1e-6)
-          .style("fill", function(d) { return d._repost_users ? "lightsteelblue" : "#fff"; });
+          .style("fill", function(d) { return d._children ? "lightsteelblue" : "#fff"; });
 
       nodeEnter.append("svg:text")
-          .attr("x", function(d) { return d.repost_users || d._repost_users ? -10 : 10; })
+          .attr("x", function(d) { return d.children || d._children ? -10 : 10; })
           .attr("dy", ".35em")
-          .attr("text-anchor", function(d) { return d.repost_users || d._repost_users ? "end" : "start"; })
+          .attr("text-anchor", function(d) { return d.children || d._children ? "end" : "start"; })
           .text(function(d) { return d.name; })
           .style("fill-opacity", 1e-6);
 
@@ -84,7 +84,7 @@
 
       nodeUpdate.select("circle")
           .attr("r", 4.5)
-          .style("fill", function(d) { return d._repost_users ? "lightsteelblue" : "#fff"; });
+          .style("fill", function(d) { return d._children ? "lightsteelblue" : "#fff"; });
 
       nodeUpdate.select("text")
           .style("fill-opacity", 1);
@@ -139,12 +139,12 @@
 
     // Toggle children.
     function toggle(d) {
-      if (d.repost_users) {
-        d._repost_users = d.repost_users;
-        d.repost_users = null;
+      if (d.children) {
+        d._children = d.children;
+        d.children = null;
       } else {
-        d.repost_users = d._repost_users;
-        d._repost_users = null;
+        d.children = d._children;
+        d._children = null;
       }
     }
 
