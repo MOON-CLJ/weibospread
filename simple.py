@@ -53,10 +53,10 @@ def search():
 
 def dps_graph(simple_graph, relation_links, repost_users, now, now_node):
     if now_node == None:
-        simple_graph = {"name": repost_users[0]["name"], "id": repost_users[0]["id"], "children": []}
+        simple_graph = {"name": repost_users[0]["name"], "wid": repost_users[0]["id"], "children": []}
         now_node = simple_graph
     for link in relation_links[now]:
-        now_node["children"].append({"name": repost_users[link["index"]]["name"], "id": repost_users[link["index"]]["id"], "children": []})
+        now_node["children"].append({"name": repost_users[link["index"]]["name"], "wid": repost_users[link["index"]]["id"], "children": []})
         simple_graph, relation_links, repost_users = dps_graph(simple_graph, relation_links, repost_users, link["index"], now_node["children"][-1])
 
     if len(relation_links[now]) == 0:
