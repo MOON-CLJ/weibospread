@@ -33,7 +33,7 @@ def search():
         client.set_access_token(user["access_token"], user["expires_in"])
 
         screen_name = request.args.get('q', '')
-        screen_name = screen_name.strip("@ ")
+        screen_name = screen_name.strip("@ \r\n\t")
         try:
             target_user = client.users__show(screen_name=screen_name)
         except:
@@ -81,12 +81,13 @@ def status():
 
     #print json.dumps(json.loads(json.dumps(reposts)), indent=4)
     #        for username in re.findall(r'//@(\S+?):', text):
-    #total_number = reposts["total_number"]
+    total_number = reposts["total_number"]
     repost_users = []
     repost_users.append({"name": source_user["name"], "id": source_user["id"]})
     relation_links = [[]]
-    """
+
     print total_number
+    """
     print source_user["name"]
     print source_user["id"]
     """
@@ -128,7 +129,7 @@ def status():
 
     simple_graph = {}
     simple_graph, relation_links, repost_users = dps_graph(simple_graph, relation_links, repost_users, 0, None)
-    print json.dumps(simple_graph, indent=4)
+    #print json.dumps(simple_graph, indent=4)
     return jsonify(simple_graph)
 
 

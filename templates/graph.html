@@ -18,7 +18,10 @@
 
     d3.json("/status?id={{ id }}", function(json) {
       root = json;
-      h = json.children.length * 200;
+      if (!json.children) {
+      	return;
+      }
+      h = json.children.length * 100;
 
       tree = d3.layout.tree()
         .size([h, w]);
