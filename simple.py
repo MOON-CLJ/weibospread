@@ -40,7 +40,7 @@ def search():
             flash(u"您输入的昵称不存在,请重新输入")
             return redirect(url_for('index'))
         try:
-            statuses = client.statuses__user_timeline(uid=target_user["id"], count=10)["statuses"]
+            statuses = client.statuses__user_timeline(uid=target_user["id"], count=50)["statuses"]
         except:
             statuses = []
 
@@ -74,35 +74,34 @@ def status():
 
     try:
         reposts = client.statuses__repost_timeline(id=int(id), count=200)
-        source_user = client.statuses__show(id=int(id))["user"]
+        total_number = reposts["total_number"]
+        print total_number
+        reposts = reposts["reposts"]
+        if total_number > 200:
+            for i in xrange(total_number / 200):
+                print "more about", id, "page", i + 2
+                more_reposts = client.statuses__repost_timeline(id=int(id), count=200, page=i + 2)
+                reposts.extend(more_reposts["reposts"])
     except:
         flash(u"获取微博的转发信息失败")
-        return redirect(url_for('index'))
 
-    #print json.dumps(json.loads(json.dumps(reposts)), indent=4)
-    #        for username in re.findall(r'//@(\S+?):', text):
-    total_number = reposts["total_number"]
+#    print json.dumps(json.loads(json.dumps(reposts)), indent=4)
+
+    source_user = client.statuses__show(id=int(id))["user"]
     repost_users = []
     repost_users.append({"name": source_user["name"], "id": source_user["id"]})
     relation_links = [[]]
 
-    print total_number
-    """
-    print source_user["name"]
-    print source_user["id"]
-    """
-
-    reposts["reposts"].reverse()
-    for index in xrange(len(reposts["reposts"])):
-        repost = reposts["reposts"][index]
-        """
-        print "<-------------------------------------------------------->"
-        print repost["text"]
-        print repost["user"]["id"]
-        print repost["user"]["screen_name"]
-        """
-        repost_userinfo = {"id": repost["user"]["id"], "name": repost["user"]["screen_name"]}
-        repost_info = {"index": index + 1}
+    reposts.reverse()
+    offset = 0
+    for index in xrange(len(reposts)):
+        repost = reposts[index]
+        try:
+            repost_userinfo = {"id": repost["user"]["id"], "name": repost["user"]["screen_name"]}
+        except:
+            offset -= 1
+            continue
+        repost_info = {"index": index + offset + 1}
 
         relation_links.append([])
 
@@ -112,7 +111,6 @@ def status():
             temp_len = len(repost_users)
             for i in xrange(temp_len):
                 if repost_users[temp_len - 1 - i]["name"] == repost_user[0]:
-#                        print repost['text']
                     flag = False
                     relation_links[temp_len - 1 - i].append(repost_info)
                     break
