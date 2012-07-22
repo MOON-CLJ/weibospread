@@ -71,7 +71,7 @@ def status():
     client.set_access_token(user["access_token"], user["expires_in"])
 
     id = request.args.get('id', '')
-
+    source_user = client.statuses__show(id=int(id))["user"]
     try:
         reposts = client.statuses__repost_timeline(id=int(id), count=200)
         total_number = reposts["total_number"]
@@ -87,7 +87,6 @@ def status():
 
 #    print json.dumps(json.loads(json.dumps(reposts)), indent=4)
 
-    source_user = client.statuses__show(id=int(id))["user"]
     repost_users = []
     repost_users.append({"name": source_user["name"], "id": source_user["id"]})
     relation_links = [[]]
