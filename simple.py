@@ -64,6 +64,24 @@ def dps_graph(simple_graph, relation_links, repost_users, now, now_node):
     return simple_graph, relation_links, repost_users
 
 
+def clear_graph(simple_graph):
+    if "children" in simple_graph:
+        flag = False
+        for child in simple_graph["children"]:
+            if "children" in child:
+                flag = True
+                break
+        if flag:
+            index = 0
+            while index < len(simple_graph["children"]):
+                if "children" not in simple_graph["children"][index]:
+                    simple_graph["children"].pop(index)
+                else:
+                    index += 1
+
+    return simple_graph
+
+
 @app.route('/status')
 def status():
     user = mongo.db.users.find_one_or_404({"uid": session["uid"]})
@@ -127,6 +145,9 @@ def status():
     simple_graph = {}
     simple_graph, relation_links, repost_users = dps_graph(simple_graph, relation_links, repost_users, 0, None)
     #print json.dumps(simple_graph, indent=4)
+
+    #remove less repost node
+    simple_graph = clear_graph(simple_graph)
     return jsonify(simple_graph)
 
 
@@ -182,4 +203,4 @@ def login():
 app.secret_key = 'youknowwhat,iamsocute'
 if __name__ == '__main__':
     app.debug = True
-    app.run()
+    app.run(host='0.0.0.0')
