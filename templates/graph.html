@@ -18,7 +18,8 @@
       if (!json.children) {
       	return;
       }
-      h = json.children.length * 62;
+      h = 0;
+      json.children.forEach(function(child) { h += child.children.length * 30 });
 
       tree = d3.layout.tree()
         .size([h, w]);
