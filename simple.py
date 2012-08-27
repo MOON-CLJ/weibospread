@@ -6,7 +6,10 @@ from flask.ext.pymongo import PyMongo
 from weibo import APIClient
 import simplejson as json
 import re
-
+from gexf import Gexf
+from lxml import etree
+from gen import Tree
+import buchheim
 
 app = Flask(__name__)
 mongo = PyMongo(app)
@@ -51,49 +54,26 @@ def search():
     return redirect(url_for('login'))
 
 
-def dps_graph(simple_graph, relation_links, repost_users, now, now_node):
-    if now_node == None:
-        simple_graph = {"name": repost_users[0]["name"], "wid": repost_users[0]["id"], "children": []}
-        now_node = simple_graph
-    for link in relation_links[now]:
-        now_node["children"].append({"name": repost_users[link["index"]]["name"], "wid": repost_users[link["index"]]["id"], "children": []})
-        simple_graph, relation_links, repost_users = dps_graph(simple_graph, relation_links, repost_users, link["index"], now_node["children"][-1])
-
-    if len(relation_links[now]) == 0:
-        del now_node["children"]
-    return simple_graph, relation_links, repost_users
-
-
-def clear_graph(simple_graph):
-    if "children" in simple_graph:
-        flag = False
-        for child in simple_graph["children"]:
-            if "children" in child:
-                flag = True
-                break
-        if flag:
-            index = 0
-            while index < len(simple_graph["children"]):
-                if "children" not in simple_graph["children"][index]:
-                    simple_graph["children"].pop(index)
-                else:
-                    index += 1
-
-    return simple_graph
+def add_node(drawtree, graph):
+    graph.addNode(drawtree.tree.wid, drawtree.tree.node,
+            b="45", r="216", g="72", x=str(drawtree.x), y=str(drawtree.y*10), z="0.0", size="0.5")
+    for child in drawtree.children:
+        add_node(child, graph)
 
 
 @app.route('/status')
 def status():
+
     user = mongo.db.users.find_one_or_404({"uid": session["uid"]})
     client = APIClient(app_key=APP_KEY, app_secret=APP_SECRET, redirect_uri=CALLBACK_URL)
     client.set_access_token(user["access_token"], user["expires_in"])
 
     id = request.args.get('id', '')
-    source_user = client.statuses__show(id=int(id))["user"]
     try:
+        source_user = client.statuses__show(id=int(id))["user"]
         reposts = client.statuses__repost_timeline(id=int(id), count=200)
         total_number = reposts["total_number"]
-        print total_number
+        print "expect:", total_number
         reposts = reposts["reposts"]
         if total_number > 200:
             for i in xrange(total_number / 200):
@@ -103,52 +83,42 @@ def status():
     except:
         flash(u"获取微博的转发信息失败")
 
-#    print json.dumps(json.loads(json.dumps(reposts)), indent=4)
+    print "actual:", len(reposts)
 
-    repost_users = []
-    repost_users.append({"name": source_user["name"], "id": source_user["id"]})
-    relation_links = [[]]
+    #root
+    tree_nodes = []
+    tree_nodes.append(Tree(source_user["name"], int(id)))
 
-    reposts.reverse()
-    offset = 0
-    for index in xrange(len(reposts)):
-        repost = reposts[index]
-        try:
-            repost_userinfo = {"id": repost["user"]["id"], "name": repost["user"]["screen_name"]}
-        except:
-            offset -= 1
-            continue
-        repost_info = {"index": index + offset + 1}
+    for repost in reposts[::-1]:
+        tree_nodes.append(Tree(repost["user"]["screen_name"], repost["id"]))
 
-        relation_links.append([])
-
-        repost_user = re.findall(r'//@(\S+?):', repost["text"])
-        if len(repost_user):
+        repost_users = re.findall(r'//@(\S+?):', repost["text"])
+        if len(repost_users):
             flag = True
-            temp_len = len(repost_users)
-            for i in xrange(temp_len):
-                if repost_users[temp_len - 1 - i]["name"] == repost_user[0]:
+            for node in tree_nodes[::-1]:
+                if node.node == repost_users[0]:
+                    node.append_child(tree_nodes[-1])
                     flag = False
-                    relation_links[temp_len - 1 - i].append(repost_info)
                     break
-            if not flag:
-                repost_users.append(repost_userinfo)
-                continue
 
-        relation_links[0].append(repost_info)
-        repost_users.append(repost_userinfo)
-    """
-    print "relation_links", json.dumps(relation_links, indent=4)
-    print "repost_users", json.dumps(repost_users, indent=4)
-    """
+            if flag:
+                tree_nodes[0].append_child(tree_nodes[-1])
+        else:
+            tree_nodes[0].append_child(tree_nodes[-1])
 
-    simple_graph = {}
-    simple_graph, relation_links, repost_users = dps_graph(simple_graph, relation_links, repost_users, 0, None)
-    #print json.dumps(simple_graph, indent=4)
+    dt = buchheim.buchheim(tree_nodes[0])
 
-    #remove less repost node
-    simple_graph = clear_graph(simple_graph)
-    return jsonify(simple_graph)
+    gexf = Gexf("MOON_CLJ", "haha")
+    graph = gexf.addGraph("directed", "static", "weibo graph")
+    graph.addNodeAttribute("Authority", type="float", force_id="Authority")
+    graph.addNodeAttribute("Hub", type="float", force_id="hub")
+    add_node(dt, graph)
+
+    #node.addAttribute("Authority", "1.1")
+
+    return etree.tostring(gexf.getXML(), pretty_print=True, encoding='utf-8', xml_declaration=True)
+
+#    print json.dumps(json.loads(json.dumps(reposts)), indent=4)
 
 
 @app.route('/graph')
