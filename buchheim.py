@@ -3,6 +3,7 @@
 from gen import Tree
 from operator import lt, gt
 from sys import stdout
+import math
 
 class DrawTree(object):
     def __init__(self, tree, parent=None, depth=0, number=1):
@@ -52,6 +53,7 @@ def buchheim(tree):
         third_walk(dt, max_depth*0.5, -min)
     else:
         third_walk(dt, max_depth*0.5, None)
+
     return dt
 
 def third_walk(tree, m, n=None):

@@ -10,6 +10,8 @@ from gexf import Gexf
 from lxml import etree
 from gen import Tree
 import buchheim
+import math
+import random
 
 app = Flask(__name__)
 mongo = PyMongo(app)
@@ -55,8 +57,17 @@ def search():
 
 
 def add_node(drawtree, graph):
+    length = len(drawtree.children)
+    size = math.log((math.pow(length, 0.3) + math.sqrt(4)), 4)
+    b, r, g = "0", "179", "0"
+    if length > 3:
+        b = str(random.randint(0, 255))
+        r = str(random.randint(100, 255))
+        g = str(random.randint(0, 255))
+
     graph.addNode(drawtree.tree.wid, drawtree.tree.node,
-            b="45", r="216", g="72", x=str(drawtree.x), y=str(drawtree.y*10), z="0.0", size="0.5")
+            b=b, r=r, g=g, x=str(drawtree.x), y=str(drawtree.y * 10), z="0.0",
+            size=str(size))
     for child in drawtree.children:
         add_node(child, graph)
 
@@ -90,7 +101,11 @@ def status():
     tree_nodes.append(Tree(source_user["name"], int(id)))
 
     for repost in reposts[::-1]:
-        tree_nodes.append(Tree(repost["user"]["screen_name"], repost["id"]))
+        try:
+            tree_nodes.append(Tree(repost["user"]["screen_name"], repost["id"]))
+        except:
+            print "weibo deleted"
+            continue
 
         repost_users = re.findall(r'//@(\S+?):', repost["text"])
         if len(repost_users):
