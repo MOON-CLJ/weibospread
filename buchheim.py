@@ -48,13 +48,13 @@ class DrawTree(object):
 
 def buchheim(tree):
     dt = firstwalk(DrawTree(tree))
-    min, max_depth = second_walk(dt)
+    min, max_depth, max_width = second_walk(dt)
     if min < 0:
         third_walk(dt, max_depth*0.5, -min)
     else:
         third_walk(dt, max_depth*0.5, None)
 
-    return dt
+    return dt, max_width
 
 def third_walk(tree, m, n=None):
     if n is not None:
@@ -157,7 +157,7 @@ def ancestor(vil, v, default_ancestor):
     else:
         return default_ancestor
 
-def second_walk(v, m=0, depth=0, min=None, max_depth=0):
+def second_walk(v, m=0, depth=0, min=None, max_depth=0, max_width=0):
     v.x += m
 
     if min is None or v.x < min:
@@ -166,10 +166,14 @@ def second_walk(v, m=0, depth=0, min=None, max_depth=0):
     if v.y > max_depth:
         max_depth = v.y
 
-    for w in v.children:
-        min, max_depth = second_walk(w, m + v.mod, depth+1, min, max_depth)
+    length = len(v.children)
+    if length > max_width:
+        max_width = length
 
-    return min, max_depth
+    for w in v.children:
+        min, max_depth, max_width = second_walk(w, m + v.mod, depth+1, min, max_depth, max_width)
+
+    return min, max_depth, max_width
 
 if __name__ == "__main__":
     from demo_trees import trees

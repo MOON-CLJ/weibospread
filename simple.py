@@ -56,20 +56,30 @@ def search():
     return redirect(url_for('login'))
 
 
-def add_node(drawtree, graph):
+class Count:
+    def __init__(self, count=0):
+        self.count = count
+
+
+def add_node_edge(drawtree, graph, ct, parent=None, max_width=0):
     length = len(drawtree.children)
     size = math.log((math.pow(length, 0.3) + math.sqrt(4)), 4)
-    b, r, g = "0", "179", "0"
-    if length > 3:
+    b, r, g = "217", "254", "240"
+    if length > 6:
         b = str(random.randint(0, 255))
         r = str(random.randint(100, 255))
         g = str(random.randint(0, 255))
 
+    scale_y = max_width / 200 + 1
     graph.addNode(drawtree.tree.wid, drawtree.tree.node,
-            b=b, r=r, g=g, x=str(drawtree.x), y=str(drawtree.y * 10), z="0.0",
+            b=b, r=r, g=g, x=str(drawtree.x), y=str(drawtree.y * scale_y * 10), z="0.0",
             size=str(size))
+    if parent is not None:
+        ct.count += 1
+        graph.addEdge(ct.count, str(drawtree.tree.wid), str(parent.tree.wid))
+
     for child in drawtree.children:
-        add_node(child, graph)
+        add_node_edge(child, graph, ct, drawtree, max_width)
 
 
 @app.route('/status')
@@ -93,6 +103,7 @@ def status():
                 reposts.extend(more_reposts["reposts"])
     except:
         flash(u"获取微博的转发信息失败")
+        return ""
 
     print "actual:", len(reposts)
 
@@ -121,13 +132,13 @@ def status():
         else:
             tree_nodes[0].append_child(tree_nodes[-1])
 
-    dt = buchheim.buchheim(tree_nodes[0])
+    dt, max_width = buchheim.buchheim(tree_nodes[0])
 
     gexf = Gexf("MOON_CLJ", "haha")
     graph = gexf.addGraph("directed", "static", "weibo graph")
     graph.addNodeAttribute("Authority", type="float", force_id="Authority")
     graph.addNodeAttribute("Hub", type="float", force_id="hub")
-    add_node(dt, graph)
+    add_node_edge(dt, graph, Count(), max_width=max_width)
 
     #node.addAttribute("Authority", "1.1")
 
@@ -187,5 +198,5 @@ def login():
 
 app.secret_key = 'youknowwhat,iamsocute'
 if __name__ == '__main__':
-    app.debug = True
+    #app.debug = True
     app.run(host='0.0.0.0')
