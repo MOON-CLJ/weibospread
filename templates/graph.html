@@ -39,6 +39,12 @@
       function attributesToString(attr) {
         return '<ul>' +
           attr.map(function(o){
+	    if (o.attr == "img_url") {
+	      return '<img src="' + o.val +'" >'
+	    }
+	    if (o.attr == "weibo_url") {
+	      return '<a href="' + o.val +'" target="_blank" >点击访问此微博</a>'
+	    }
             return '<li>' + o.attr + ' : ' + o.val + '</li>';
           }).join('') +
           '</ul>';
@@ -63,7 +69,9 @@
         ).attr(
           'id',
           'node-info'+sigInst.getID()
-        ).css({
+	).mouseleave(
+	  hideNodeInfo  
+	).css({
           'display': 'inline-block',
           'border-radius': 3,
           'padding': 5,
@@ -85,7 +93,7 @@
         popUp = false;
       }
 
-      sigInst.bind('overnodes',showNodeInfo).bind('outnodes',hideNodeInfo).draw();
+      sigInst.bind('overnodes',showNodeInfo).draw();
     })();
   }
 

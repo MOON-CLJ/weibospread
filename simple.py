@@ -12,12 +12,20 @@ from gen import Tree
 import buchheim
 import math
 import random
+import base62
 
 app = Flask(__name__)
 mongo = PyMongo(app)
+"""
+#prod
 APP_KEY = '4131380600'
 APP_SECRET = 'df544af4a9e30abe16e715cb4d0be423'
 CALLBACK_URL = 'http://idec.buaa.edu.cn:8080/callback'
+"""
+#dev
+APP_KEY = '1966311272'
+APP_SECRET = '57d36e0eaef033593f4bb6f745a67c5f'
+CALLBACK_URL = 'http://127.0.0.1:8080/callback'
 
 
 @app.route('/')
@@ -71,9 +79,14 @@ def add_node_edge(drawtree, graph, ct, parent=None, max_width=0):
         g = str(random.randint(0, 255))
 
     scale_y = max_width / 200 + 1
-    graph.addNode(drawtree.tree.wid, drawtree.tree.node,
-            b=b, r=r, g=g, x=str(drawtree.x), y=str(drawtree.y * scale_y * 10), z="0.0",
-            size=str(size))
+    node = graph.addNode(drawtree.tree.wid, drawtree.tree.node,
+                b=b, r=r, g=g, x=str(drawtree.x), y=str(drawtree.y * scale_y * 10), z="0.0",
+                size=str(size))
+    node.addAttribute("img_url", drawtree.tree.img_url)
+    node.addAttribute("name", drawtree.tree.node)
+    node.addAttribute("repost_num", str(length))
+    node.addAttribute("weibo_url", drawtree.tree.weibo_url)
+
     if parent is not None:
         ct.count += 1
         graph.addEdge(ct.count, str(drawtree.tree.wid), str(parent.tree.wid))
@@ -91,7 +104,7 @@ def status():
 
     id = request.args.get('id', '')
     try:
-        source_user = client.statuses__show(id=int(id))["user"]
+        source_weibo = client.statuses__show(id=int(id))
         reposts = client.statuses__repost_timeline(id=int(id), count=200)
         total_number = reposts["total_number"]
         print "expect:", total_number
@@ -109,11 +122,24 @@ def status():
 
     #root
     tree_nodes = []
-    tree_nodes.append(Tree(source_user["name"], int(id)))
+    node = source_weibo["user"]["name"]
+    img_url = source_weibo["user"]["profile_image_url"]
+    weibo_url = "http://weibo.com/" + \
+        str(source_weibo["user"]["id"]) + \
+        "/" + base62.mid_to_str(source_weibo["mid"])
+
+    tree_nodes.append(Tree(node, int(id), img_url, weibo_url))
 
     for repost in reposts[::-1]:
         try:
-            tree_nodes.append(Tree(repost["user"]["screen_name"], repost["id"]))
+            node = repost["user"]["screen_name"]
+            wid = repost["id"]
+            img_url = repost["user"]["profile_image_url"]
+
+            weibo_url = "http://weibo.com/" + \
+                str(repost["user"]["id"]) + \
+                "/" + base62.mid_to_str(repost["mid"])
+            tree_nodes.append(Tree(node, wid, img_url, weibo_url))
         except:
             print "weibo deleted"
             continue
@@ -136,11 +162,11 @@ def status():
 
     gexf = Gexf("MOON_CLJ", "haha")
     graph = gexf.addGraph("directed", "static", "weibo graph")
-    graph.addNodeAttribute("Authority", type="float", force_id="Authority")
-    graph.addNodeAttribute("Hub", type="float", force_id="hub")
+    graph.addNodeAttribute("img_url", type="URI", force_id="img_url")
+    graph.addNodeAttribute("name", type="string", force_id="name")
+    graph.addNodeAttribute("repost_num", type="integer", force_id="repost_num")
+    graph.addNodeAttribute("weibo_url", type="URI", force_id="weibo_url")
     add_node_edge(dt, graph, Count(), max_width=max_width)
-
-    #node.addAttribute("Authority", "1.1")
 
     return etree.tostring(gexf.getXML(), pretty_print=True, encoding='utf-8', xml_declaration=True)
 
@@ -198,5 +224,5 @@ def login():
 
 app.secret_key = 'youknowwhat,iamsocute'
 if __name__ == '__main__':
-    #app.debug = True
+    app.debug = True
     app.run(host='0.0.0.0', port=8080)

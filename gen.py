@@ -1,9 +1,11 @@
 import os
 
 class Tree:
-    def __init__(self, node="", wid=0, *children):
+    def __init__(self, node="", wid=0, img_url="", weibo_url="", *children):
         self.node = node
         self.wid = wid
+        self.img_url = img_url
+        self.weibo_url = weibo_url
         self.width = len(node)
         if children: self.children = children
         else:        self.children = []
