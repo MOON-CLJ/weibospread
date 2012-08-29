@@ -16,7 +16,7 @@ import base62
 
 app = Flask(__name__)
 mongo = PyMongo(app)
-"""
+
 #prod
 APP_KEY = '4131380600'
 APP_SECRET = 'df544af4a9e30abe16e715cb4d0be423'
@@ -26,7 +26,7 @@ CALLBACK_URL = 'http://idec.buaa.edu.cn:8080/callback'
 APP_KEY = '1966311272'
 APP_SECRET = '57d36e0eaef033593f4bb6f745a67c5f'
 CALLBACK_URL = 'http://127.0.0.1:8080/callback'
-
+"""
 
 @app.route('/')
 def index():
@@ -224,5 +224,5 @@ def login():
 
 app.secret_key = 'youknowwhat,iamsocute'
 if __name__ == '__main__':
-    app.debug = True
+    #app.debug = True
     app.run(host='0.0.0.0', port=8080)
