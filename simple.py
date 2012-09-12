@@ -17,6 +17,7 @@ import base62
 app = Flask(__name__)
 mongo = PyMongo(app)
 
+
 #prod
 APP_KEY = '4131380600'
 APP_SECRET = 'df544af4a9e30abe16e715cb4d0be423'
@@ -27,6 +28,7 @@ APP_KEY = '1966311272'
 APP_SECRET = '57d36e0eaef033593f4bb6f745a67c5f'
 CALLBACK_URL = 'http://127.0.0.1:8080/callback'
 """
+
 
 @app.route('/')
 def index():
@@ -69,14 +71,38 @@ class Count:
         self.count = count
 
 
-def add_node_edge(drawtree, graph, ct, parent=None, max_width=0):
+def node_rank(root):
+    import Queue
+    q = Queue.Queue()
+    q.put(root)
+    node_length = {}
+    while not q.empty():
+        node = q.get()
+        node_length[node] = len(node.children)
+        for n in node.children:
+            q.put(n)
+    node_length = sorted(node_length.iteritems(), key=lambda(x, y): y, reverse=True)
+    if len(node_length) > 5:
+        node_length = node_length[:5]
+    rank_node = []
+    for node, value in node_length:
+        if value > 5:
+            rank_node.append(node)
+    return rank_node
+
+
+def add_node_edge(drawtree, graph, rank, ct, parent=None, max_width=0):
     length = len(drawtree.children)
     size = math.log((math.pow(length, 0.3) + math.sqrt(4)), 4)
     b, r, g = "217", "254", "240"
-    if length > 6:
+    if length > 6 and drawtree not in rank:
         b = str(random.randint(0, 255))
         r = str(random.randint(100, 255))
         g = str(random.randint(0, 255))
+    if drawtree in rank:
+        b = '0'
+        r = '255'
+        g = '0'
 
     scale_y = max_width / 200 + 1
     node = graph.addNode(drawtree.tree.wid, drawtree.tree.node,
@@ -84,6 +110,8 @@ def add_node_edge(drawtree, graph, ct, parent=None, max_width=0):
                 size=str(size))
     node.addAttribute("img_url", drawtree.tree.img_url)
     node.addAttribute("name", drawtree.tree.node)
+    node.addAttribute("location", drawtree.tree.location)
+    node.addAttribute("datetime", drawtree.tree.datetime)
     node.addAttribute("repost_num", str(length))
     node.addAttribute("weibo_url", drawtree.tree.weibo_url)
 
@@ -92,7 +120,7 @@ def add_node_edge(drawtree, graph, ct, parent=None, max_width=0):
         graph.addEdge(ct.count, str(drawtree.tree.wid), str(parent.tree.wid))
 
     for child in drawtree.children:
-        add_node_edge(child, graph, ct, drawtree, max_width)
+        add_node_edge(child, graph, rank, ct, drawtree, max_width)
 
 
 @app.route('/status')
@@ -113,9 +141,19 @@ def status():
             for i in xrange(total_number / 200):
                 print "more about", id, "page", i + 2
                 more_reposts = client.statuses__repost_timeline(id=int(id), count=200, page=i + 2)
+                weibos_len = len(more_reposts["reposts"])
+                print "get", weibos_len, "weibos"
+                if weibos_len == 0:
+                    if len(reposts) > 0:
+                        break
+                    else:
+                        print "** " * 20 + "\n", more_reposts, "\n" + "** " * 20 + "\n"
+                        #flash(u"获取微博的转发信息失败")
+                        return ""
+
                 reposts.extend(more_reposts["reposts"])
     except:
-        flash(u"获取微博的转发信息失败")
+        #flash(u"获取微博的转发信息失败")
         return ""
 
     print "actual:", len(reposts)
@@ -123,23 +161,26 @@ def status():
     #root
     tree_nodes = []
     node = source_weibo["user"]["name"]
+    location = source_weibo["user"]["location"]
+    datetime = source_weibo["created_at"]
     img_url = source_weibo["user"]["profile_image_url"]
     weibo_url = "http://weibo.com/" + \
         str(source_weibo["user"]["id"]) + \
         "/" + base62.mid_to_str(source_weibo["mid"])
 
-    tree_nodes.append(Tree(node, int(id), img_url, weibo_url))
+    tree_nodes.append(Tree(node, location, datetime, int(id), img_url, weibo_url))
 
     for repost in reposts[::-1]:
         try:
             node = repost["user"]["screen_name"]
             wid = repost["id"]
             img_url = repost["user"]["profile_image_url"]
-
+            location = repost["user"]["location"]
+            datetime = repost['created_at']
             weibo_url = "http://weibo.com/" + \
                 str(repost["user"]["id"]) + \
                 "/" + base62.mid_to_str(repost["mid"])
-            tree_nodes.append(Tree(node, wid, img_url, weibo_url))
+            tree_nodes.append(Tree(node, location, datetime, wid, img_url, weibo_url))
         except:
             print "weibo deleted"
             continue
@@ -164,9 +205,13 @@ def status():
     graph = gexf.addGraph("directed", "static", "weibo graph")
     graph.addNodeAttribute("img_url", type="URI", force_id="img_url")
     graph.addNodeAttribute("name", type="string", force_id="name")
+    graph.addNodeAttribute("location", type="string", force_id="location")
+    graph.addNodeAttribute("datetime", type="string", force_id="datetime")
     graph.addNodeAttribute("repost_num", type="integer", force_id="repost_num")
     graph.addNodeAttribute("weibo_url", type="URI", force_id="weibo_url")
-    add_node_edge(dt, graph, Count(), max_width=max_width)
+
+    rank = node_rank(tree_nodes[0])
+    add_node_edge(dt, graph, rank, Count(), max_width=max_width)
 
     return etree.tostring(gexf.getXML(), pretty_print=True, encoding='utf-8', xml_declaration=True)
 
@@ -212,6 +257,24 @@ def callback():
     except Exception:
         flash(u'获取用户微博信息没有成功')
         return redirect(url_for('login'))
+
+
+@app.route('/suggest', methods=['GET'])
+def suggest():
+    if "uid" in session:
+        query = request.args.get('query', '')
+        user = mongo.db.users.find_one_or_404({"uid": session["uid"]})
+        client = APIClient(app_key=APP_KEY, app_secret=APP_SECRET, redirect_uri=CALLBACK_URL)
+        client.set_access_token(user["access_token"], user["expires_in"])
+        try:
+            results = []
+            for s in client.search__suggestions__at_users(q=query, type=0, count=10):
+                results.append(s['nickname'])
+            return json.dumps({'query': query, 'suggestions': results})
+        except:
+            raise
+
+    return json.dumps({'query': query, 'suggestions': []})
 
 
 @app.route('/login', methods=['GET'])

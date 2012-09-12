@@ -18,6 +18,21 @@
   border-radius: 9px;
 }
 
+.autocomplete{
+    margin-top:10px;
+    cursor:pointer;
+}
+.autocomplete div{
+    position:relative;
+    top:10px;
+    margin:10px;
+    font-size:150%;
+}
+.selected{
+  font-weight:bold;  
+}
+
+
 .unstyled {
   margin-left: 0;
   list-style: none;
@@ -95,7 +110,11 @@ input, button, select, textarea {
   position: relative;
   line-height: 1;
 }
-
+#user {
+  width: 61.8%;
+  margin-left:14.8%;  
+  position: relative; 
+}
 #userpic {
   display:inline;
 }
@@ -126,8 +145,16 @@ input, button, select, textarea {
 }
 
 .statuscontent {
+  position:relative;
+  margin-top:3%;
+  margin-left:5%;
   font-size: 18px; 
   line-height: 30px;
+}
+.repostcount {
+  position:relative;
+  float:right;
+  color: #0388A6; 
 }
 
 .sinalogin a{ width:86px; height:18px;  background:url(../../loginbtn_04.png); text-decoration:none; background:red;}

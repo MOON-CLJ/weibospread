@@ -1,8 +1,11 @@
 import os
 
+
 class Tree:
-    def __init__(self, node="", wid=0, img_url="", weibo_url="", *children):
+    def __init__(self, node="", location="", datetime="", wid=0, img_url="", weibo_url="", *children):
         self.node = node
+        self.location = location
+        self.datetime = datetime
         self.wid = wid
         self.img_url = img_url
         self.weibo_url = weibo_url
@@ -12,6 +15,7 @@ class Tree:
 
     def __str__(self):
         return "%s" % (self.node)
+
     def __repr__(self):
         return "%s" % (self.node)
 
@@ -28,6 +32,7 @@ class Tree:
 
     def append_child(self, tree):
         self.children.append(tree)
+
 
 def gentree(path):
     root = Tree(os.path.basename(path))

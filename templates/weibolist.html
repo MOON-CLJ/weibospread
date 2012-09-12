@@ -1,6 +1,15 @@
 {% extends "layout.html" %}
 {% block body %}
   <div class="container">
+    <div id="user">
+      {% if statuses %}
+        <p>
+	  <img src="{{ statuses[0]["user"]["profile_image_url"] }}" />
+	  {{ statuses[0]["user"]["name"] }}
+	  {{ statuses[0]["user"]["location"] }}
+	</p>
+      {% endif %}
+    </div>
     <div id="weibos">
       <div class="wb-k">
 	{% if statuses %}
@@ -12,6 +21,7 @@
 	      {% if "retweeted_status" in status %}
 		<p class="statuscontent">{{ status.retweeted_status.text }}</p>
 	      {% endif %}
+		<h3 class="repostcount">转发:{{ status["reposts_count"] }} 评论:{{ status["comments_count"] }}</h3>
        	    </div>
 	  {% endfor %}
 	{% endif %}
