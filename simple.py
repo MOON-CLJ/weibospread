@@ -29,7 +29,8 @@ def index():
     if "uid" in session:
         screen_name = session["screen_name"]
         profile_image_url = session["profile_image_url"]
-        return render_template('simple.html', btnuserpicvisible='inline', btnloginvisible='none', screen_name=screen_name, profile_image_url=profile_image_url)
+        return render_template('simple.html', btnuserpicvisible='inline',
+                btnloginvisible='none', screen_name=screen_name, profile_image_url=profile_image_url)
 
     return redirect(url_for('login'))
 
@@ -49,13 +50,15 @@ def search():
             flash(u"您输入的昵称不存在,请重新输入")
             return redirect(url_for('index'))
         try:
-            statuses = client.statuses__user_timeline(uid=target_user["id"], count=200)["statuses"]
+            statuses = client.statuses__user_timeline(uid=target_user["id"], count=50)["statuses"]
         except:
+            flash(u"获取微博信息失败")
             statuses = []
 
         screen_name = session["screen_name"]
         profile_image_url = session["profile_image_url"]
-        return render_template('weibolist.html', btnuserpicvisible='inline', btnloginvisible='none', screen_name=screen_name, profile_image_url=profile_image_url, statuses=statuses)
+        return render_template('weibolist.html', btnuserpicvisible='inline',
+                btnloginvisible='none', screen_name=screen_name, profile_image_url=profile_image_url, statuses=statuses)
 
     return redirect(url_for('login'))
 
@@ -142,12 +145,10 @@ def status():
                         break
                     else:
                         print "** " * 20 + "\n", more_reposts, "\n" + "** " * 20 + "\n"
-                        #flash(u"获取微博的转发信息失败")
                         return ""
 
                 reposts.extend(more_reposts["reposts"])
     except:
-        #flash(u"获取微博的转发信息失败")
         return ""
 
     print "actual:", len(reposts)
@@ -219,7 +220,8 @@ def graph():
 
         screen_name = session["screen_name"]
         profile_image_url = session["profile_image_url"]
-        return render_template('graph.html', btnuserpicvisible='inline', btnloginvisible='none', screen_name=screen_name, profile_image_url=profile_image_url, id=id)
+        return render_template('graph.html', btnuserpicvisible='inline',
+                btnloginvisible='none', screen_name=screen_name, profile_image_url=profile_image_url, id=id)
 
     return redirect(url_for('login'))
 
@@ -243,7 +245,10 @@ def callback():
         userinfo = client.get.users__show(uid=uid)
         screen_name = userinfo["screen_name"]
         profile_image_url = userinfo["profile_image_url"]
-        mongo.db.users.update({"uid": str(uid)}, {"$set": {"uid": str(uid), "access_token": access_token, "expires_in": expires_in, "screen_name": screen_name, "profile_image_url": profile_image_url}}, upsert=True, safe=True)
+        mongo.db.users.update({"uid": str(uid)},
+                {"$set": {"uid": str(uid), "access_token": access_token,
+                    "expires_in": expires_in, "screen_name": screen_name,
+                    "profile_image_url": profile_image_url}}, upsert=True, safe=True)
         session['uid'] = str(uid)
         session['screen_name'] = screen_name
         session["profile_image_url"] = profile_image_url

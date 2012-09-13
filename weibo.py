@@ -8,7 +8,10 @@ __author__ = 'Liao Xuefeng (askxuefeng@gmail.com)'
 Python client SDK for sina weibo API using OAuth 2.
 '''
 
-import simplejson as json
+try:
+    import json
+except ImportError:
+    import simplejson as json
 import time
 import urllib
 import urllib2
@@ -45,6 +48,12 @@ class JsonObject(dict):
 
     def __setattr__(self, attr, value):
         self[attr] = value
+
+    def __getstate__(self):
+        return self.copy()
+
+    def __setstate__(self, state):
+        self.update(state)
 
 def _encode_params(**kw):
     '''
@@ -103,7 +112,7 @@ def _http_upload(url, authorization=None, **kw):
     logging.info('MULTIPART POST %s' % url)
     return _http_call(url, _HTTP_UPLOAD, authorization, **kw)
 
-def _http_call(url, method, authorization, **kw):
+def _http_call(the_url, method, authorization, **kw):
     '''
     send an http request and expect to return a json object if no error.
     '''
@@ -113,7 +122,7 @@ def _http_call(url, method, authorization, **kw):
         params, boundary = _encode_multipart(**kw)
     else:
         params = _encode_params(**kw)
-    http_url = '%s?%s' % (url, params) if method==_HTTP_GET else url
+    http_url = '%s?%s' % (the_url, params) if method==_HTTP_GET else the_url
     http_body = None if method==_HTTP_GET else params
     req = urllib2.Request(http_url, data=http_body)
     if authorization:
@@ -176,7 +185,7 @@ class APIClient(object):
 
     def request_access_token(self, code, redirect_uri=None):
         '''
-        return access token as object: {"access_token":"your-access-token","expires_in":12345678}, expires_in is standard unix-epoch-time
+        return access token as object: {"access_token":"your-access-token","expires_in":12345678,"uid":1234}, expires_in is standard unix-epoch-time
         '''
         redirect = redirect_uri if redirect_uri else self.redirect_uri
         if not redirect:
@@ -186,8 +195,18 @@ class APIClient(object):
                 client_secret = self.client_secret, \
                 redirect_uri = redirect, \
                 code = code, grant_type = 'authorization_code')
-        r.expires_in += int(time.time())
-        return r
+        current = int(time.time())
+        expires = r.expires_in + current
+        remind_in = r.get('remind_in', None)
+        if remind_in:
+            rtime = remind_in + current
+            if rtime < expires:
+                expires = rtime
+        jo = JsonObject(access_token=r.access_token, expires_in=expires)
+        uid = r.get('uid', None)
+        if uid:
+            jo.uid = uid
+        return jo
 
     def is_expires(self):
         return not self.access_token or time.time() > self.expires
