@@ -175,7 +175,6 @@ def status():
         reposts = f_db_and_g_web(id=int(id), client=client)
         if reposts is not None:
             reposts = reposts["reposts"]
-            print "get", len(reposts), "weibos of id:", id, source_weibo["user"]["name"]
         else:
             return ""
     except:
@@ -205,7 +204,7 @@ def status():
                 "/" + base62.mid_to_str(repost["mid"])
             tree_nodes.append(Tree(node, location, datetime, wid, img_url, weibo_url))
         except:
-            print "weibo deleted"
+            app.logger.error(repost)
             continue
 
         repost_users = re.findall(r'//@(\S+?):', repost["text"])
