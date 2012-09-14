@@ -120,9 +120,33 @@ def add_node_edge(drawtree, graph, rank, ct, parent=None, max_width=0):
         add_node_edge(child, graph, rank, ct, drawtree, max_width)
 
 
-def f_db_or_g_web(id, client, page=1):
-    reposts = mongo.db.weibos.find_one({"id": id, "page": page})
+def gweibo_fweb(id, client, since_id=0):
+    page = 1
+    reposts = None
+    while 1:
+        more_reposts = client.statuses__repost_timeline(id=int(id),
+                    count=200, page=page, since_id=since_id)
+        more_reposts = json.loads(json.dumps(more_reposts))
+        if len(more_reposts["reposts"]) == 0:
+            break
+        else:
+            more_reposts["reposts"].reverse()
+        page += 1
+
+        if reposts is None:
+            reposts["since_id"] = more_reposts["reposts"][-1]["id"]
+            reposts["id"] = id
+            reposts["reposts"] = more_reposts["reposts"]
+        else:
+            reposts["reposts"].extend(more_reposts["reposts"])
+    return reposts
+
+
+def f_db_or_g_web(id, client):
+    reposts = mongo.db.weibos.find_one({"id": id})
     if reposts is not None:
+        print reposts.keys()
+        print reposts["next_cursor"]
         return reposts
     else:
         reposts = client.statuses__repost_timeline(id=int(id), count=200, page=page)
@@ -221,8 +245,6 @@ def status():
     add_node_edge(dt, graph, rank, Count(), max_width=max_width)
 
     return etree.tostring(gexf.getXML(), pretty_print=True, encoding='utf-8', xml_declaration=True)
-
-#    print json.dumps(json.loads(json.dumps(reposts)), indent=4)
 
 
 @app.route('/graph')
