@@ -120,9 +120,21 @@ def add_node_edge(drawtree, graph, rank, ct, parent=None, max_width=0):
         add_node_edge(child, graph, rank, ct, drawtree, max_width)
 
 
+def f_db_or_g_web(id, client, page=1):
+    reposts = mongo.db.weibos.find_one({"id": id, "page": page})
+    if reposts is not None:
+        return reposts
+    else:
+        reposts = client.statuses__repost_timeline(id=int(id), count=200, page=page)
+        reposts = json.loads(json.dumps(reposts))
+        reposts["id"] = id
+        reposts["page"] = page
+        mongo.db.weibos.insert(reposts)
+        return reposts
+
+
 @app.route('/status')
 def status():
-
     user = mongo.db.users.find_one_or_404({"uid": session["uid"]})
     client = APIClient(app_key=APP_KEY, app_secret=APP_SECRET, redirect_uri=CALLBACK_URL)
     client.set_access_token(user["access_token"], user["expires_in"])
@@ -130,14 +142,14 @@ def status():
     id = request.args.get('id', '')
     try:
         source_weibo = client.statuses__show(id=int(id))
-        reposts = client.statuses__repost_timeline(id=int(id), count=200)
+        reposts = f_db_or_g_web(id=int(id), client=client)
         total_number = reposts["total_number"]
         print "expect:", total_number
         reposts = reposts["reposts"]
         if total_number > 200:
             for i in xrange(total_number / 200):
                 print "more about", id, "page", i + 2
-                more_reposts = client.statuses__repost_timeline(id=int(id), count=200, page=i + 2)
+                more_reposts = f_db_or_g_web(id=int(id), client=client, page=i + 2)
                 weibos_len = len(more_reposts["reposts"])
                 print "get", weibos_len, "weibos"
                 if weibos_len == 0:
