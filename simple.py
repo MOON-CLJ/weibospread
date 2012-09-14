@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from flask import Flask
-from flask import render_template, request, session, redirect, url_for, flash, jsonify
+from flask import render_template, request, session, redirect, url_for, flash
 from flask.ext.pymongo import PyMongo
 from weibo import APIClient
 import simplejson as json
@@ -30,7 +30,7 @@ def index():
         screen_name = session["screen_name"]
         profile_image_url = session["profile_image_url"]
         return render_template('simple.html', btnuserpicvisible='inline',
-                btnloginvisible='none', screen_name=screen_name, profile_image_url=profile_image_url)
+                               btnloginvisible='none', screen_name=screen_name, profile_image_url=profile_image_url)
 
     return redirect(url_for('login'))
 
@@ -58,7 +58,7 @@ def search():
         screen_name = session["screen_name"]
         profile_image_url = session["profile_image_url"]
         return render_template('weibolist.html', btnuserpicvisible='inline',
-                btnloginvisible='none', screen_name=screen_name, profile_image_url=profile_image_url, statuses=statuses)
+                               btnloginvisible='none', screen_name=screen_name, profile_image_url=profile_image_url, statuses=statuses)
 
     return redirect(url_for('login'))
 
@@ -103,8 +103,8 @@ def add_node_edge(drawtree, graph, rank, ct, parent=None, max_width=0):
 
     scale_y = max_width / 200 + 1
     node = graph.addNode(drawtree.tree.wid, drawtree.tree.node,
-                b=b, r=r, g=g, x=str(drawtree.x), y=str(drawtree.y * scale_y * 10), z="0.0",
-                size=str(size))
+                         b=b, r=r, g=g, x=str(drawtree.x), y=str(drawtree.y * scale_y * 10), z="0.0",
+                         size=str(size))
     node.addAttribute("img_url", drawtree.tree.img_url)
     node.addAttribute("name", drawtree.tree.node)
     node.addAttribute("location", drawtree.tree.location)
@@ -123,37 +123,43 @@ def add_node_edge(drawtree, graph, rank, ct, parent=None, max_width=0):
 def gweibo_fweb(id, client, since_id=0):
     page = 1
     reposts = None
+    base_since_id = since_id
     while 1:
         more_reposts = client.statuses__repost_timeline(id=int(id),
-                    count=200, page=page, since_id=since_id)
+                                                        count=200, page=page, since_id=base_since_id)
         more_reposts = json.loads(json.dumps(more_reposts))
         if len(more_reposts["reposts"]) == 0:
             break
-        else:
-            more_reposts["reposts"].reverse()
         page += 1
 
         if reposts is None:
-            reposts["since_id"] = more_reposts["reposts"][-1]["id"]
-            reposts["id"] = id
-            reposts["reposts"] = more_reposts["reposts"]
+            since_id = more_reposts["reposts"][0]["id"]
+            reposts = more_reposts["reposts"]
         else:
-            reposts["reposts"].extend(more_reposts["reposts"])
-    return reposts
+            reposts.extend(more_reposts["reposts"])
+    if reposts is not None:
+        reposts.reverse()
+    return since_id, reposts
 
 
-def f_db_or_g_web(id, client):
+def f_db_and_g_web(id, client):
     reposts = mongo.db.weibos.find_one({"id": id})
     if reposts is not None:
-        print reposts.keys()
-        print reposts["next_cursor"]
+        since_id = reposts["since_id"]
+        since_id, more_reposts = gweibo_fweb(id, client, since_id=since_id)
+        if more_reposts is not None:
+            reposts = mongo.db.weibos.find_and_modify(query={"id": id},
+                                                      update={"$pushAll": {"reposts": more_reposts}, "$set": {"since_id": since_id}},
+                                                      new=True)
         return reposts
     else:
-        reposts = client.statuses__repost_timeline(id=int(id), count=200, page=page)
-        reposts = json.loads(json.dumps(reposts))
-        reposts["id"] = id
-        reposts["page"] = page
-        mongo.db.weibos.insert(reposts)
+        since_id, more_reposts = gweibo_fweb(id, client)
+        if more_reposts is not None:
+            reposts = {}
+            reposts["id"] = id
+            reposts["since_id"] = since_id
+            reposts["reposts"] = more_reposts
+            mongo.db.weibos.insert(reposts)
         return reposts
 
 
@@ -166,28 +172,14 @@ def status():
     id = request.args.get('id', '')
     try:
         source_weibo = client.statuses__show(id=int(id))
-        reposts = f_db_or_g_web(id=int(id), client=client)
-        total_number = reposts["total_number"]
-        print "expect:", total_number
-        reposts = reposts["reposts"]
-        if total_number > 200:
-            for i in xrange(total_number / 200):
-                print "more about", id, "page", i + 2
-                more_reposts = f_db_or_g_web(id=int(id), client=client, page=i + 2)
-                weibos_len = len(more_reposts["reposts"])
-                print "get", weibos_len, "weibos"
-                if weibos_len == 0:
-                    if len(reposts) > 0:
-                        break
-                    else:
-                        print "** " * 20 + "\n", more_reposts, "\n" + "** " * 20 + "\n"
-                        return ""
-
-                reposts.extend(more_reposts["reposts"])
+        reposts = f_db_and_g_web(id=int(id), client=client)
+        if reposts is not None:
+            reposts = reposts["reposts"]
+            print "get", len(reposts), "weibos of id:", id, source_weibo["user"]["name"]
+        else:
+            return ""
     except:
         return ""
-
-    print "actual:", len(reposts)
 
     #root
     tree_nodes = []
@@ -201,7 +193,7 @@ def status():
 
     tree_nodes.append(Tree(node, location, datetime, int(id), img_url, weibo_url))
 
-    for repost in reposts[::-1]:
+    for repost in reposts:
         try:
             node = repost["user"]["screen_name"]
             wid = repost["id"]
@@ -255,7 +247,7 @@ def graph():
         screen_name = session["screen_name"]
         profile_image_url = session["profile_image_url"]
         return render_template('graph.html', btnuserpicvisible='inline',
-                btnloginvisible='none', screen_name=screen_name, profile_image_url=profile_image_url, id=id)
+                               btnloginvisible='none', screen_name=screen_name, profile_image_url=profile_image_url, id=id)
 
     return redirect(url_for('login'))
 
@@ -280,9 +272,9 @@ def callback():
         screen_name = userinfo["screen_name"]
         profile_image_url = userinfo["profile_image_url"]
         mongo.db.users.update({"uid": str(uid)},
-                {"$set": {"uid": str(uid), "access_token": access_token,
-                    "expires_in": expires_in, "screen_name": screen_name,
-                    "profile_image_url": profile_image_url}}, upsert=True, safe=True)
+                              {"$set": {"uid": str(uid), "access_token": access_token,
+                              "expires_in": expires_in, "screen_name": screen_name,
+                              "profile_image_url": profile_image_url}}, upsert=True, safe=True)
         session['uid'] = str(uid)
         session['screen_name'] = screen_name
         session["profile_image_url"] = profile_image_url
