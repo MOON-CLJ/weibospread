@@ -159,7 +159,7 @@ def f_db_and_g_web(id, client):
             reposts["id"] = id
             reposts["since_id"] = since_id
             reposts["reposts"] = more_reposts
-            mongo.db.weibos.insert(reposts)
+#            mongo.db.weibos.insert(reposts)
         return reposts
 
 
