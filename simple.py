@@ -129,47 +129,35 @@ def add_node_edge(drawtree, graph, rank, ct, parent=None, max_width=0):
     for child in drawtree.children:
         add_node_edge(child, graph, rank, ct, drawtree, max_width)
 
+"""
+reposts = mongo.db.weibos.find_and_modify(query={"id": id},
+                                          update={"$pushAll": {"reposts": more_reposts}, "$set": {"since_id": since_id}},
+                                          new=True)
+"""
 
-def gweibo_fweb(id, client, since_id=0):
-    page = 1
-    reposts = None
-    base_since_id = since_id
-    while 1:
-        more_reposts = client.get('statuses/repost_timeline', id=int(id),
-                                  count=200, page=page, since_id=base_since_id)
-        if len(more_reposts["reposts"]) == 0:
-            break
-        page += 1
 
-        if reposts is None:
-            since_id = more_reposts["reposts"][0]["id"]
-            reposts = more_reposts["reposts"]
+def gweibo_fweb(id, client, reposts_count):
+    reposts = []
+
+    for i in range(1, reposts_count / 200 + 1)[::-1]:
+        retry = 0
+        while retry < 3:
+            retry += 1
+            try:
+                more_reposts = client.get('statuses/repost_timeline', id=int(id),
+                                          count=200, page=i)
+                if len(more_reposts["reposts"]) > 0:
+                    break
+            except:
+                pass
         else:
-            reposts.extend(more_reposts["reposts"])
-    if reposts is not None:
-        reposts.reverse()
-    return since_id, reposts
+            app.logger.error("get reposts of %s fail page %d" % (id, i))
+            return reposts
 
+        more_reposts['reposts'].reverse()
+        reposts.extend(more_reposts['reposts'])
 
-def f_db_and_g_web(id, client):
-    reposts = mongo.db.weibos.find_one({"id": id})
-    if reposts is not None:
-        since_id = reposts["since_id"]
-        since_id, more_reposts = gweibo_fweb(id, client, since_id=since_id)
-        if more_reposts is not None:
-            reposts = mongo.db.weibos.find_and_modify(query={"id": id},
-                                                      update={"$pushAll": {"reposts": more_reposts}, "$set": {"since_id": since_id}},
-                                                      new=True)
-        return reposts
-    else:
-        since_id, more_reposts = gweibo_fweb(id, client)
-        if more_reposts is not None:
-            reposts = {}
-            reposts["id"] = id
-            reposts["since_id"] = since_id
-            reposts["reposts"] = more_reposts
-#            mongo.db.weibos.insert(reposts)
-        return reposts
+    return reposts
 
 
 @app.route('/status')
@@ -182,14 +170,22 @@ def status():
     client.set_token(user["access_token"])
 
     id = request.args.get('id', '')
-    try:
-        source_weibo = client.get('statuses/show', id=int(id))
-        reposts = f_db_and_g_web(id=int(id), client=client)
-        if reposts is not None:
-            reposts = reposts["reposts"]
-        else:
-            return ""
-    except:
+    retry = 0
+    while retry < 3:
+        retry += 1
+        try:
+            source_weibo = client.get('statuses/show', id=int(id))
+            reposts_count = source_weibo["reposts_count"]
+            if reposts_count > 0:
+                break
+        except:
+            pass
+    else:
+        app.logger.error("get source weibo of %s fail" % id)
+        return ""
+
+    reposts = gweibo_fweb(id=int(id), client=client, reposts_count=reposts_count)
+    if len(reposts) == 0:
         return ""
 
     #root
