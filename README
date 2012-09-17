@@ -5,11 +5,8 @@ prepare on mac:
 1, mongodb
 2, ruby <(curl -fsSkL raw.github.com/mxcl/homebrew/go) (install brew)
 3, brew install libevent
-4, sudo easy_install gevent
-5, sudo easy_install pymongo
-6, sudo easy_install Flask-PyMongo
-7, sudo easy_install simplejson
-8, git clone git@github.com:MOON-CLJ/pygexf.git
-9, sudo python setup.py install
-10, sudo easy_install lxml
-11, python simple.py
+4, sudo easy_install gevent pymongo Flask-PyMongo simplejson requests lxml tornado
+5, git clone git@github.com:MOON-CLJ/pygexf.git
+ & git clone git@github.com:MOON-CLJ/weibo.git
+ &sudo python setup.py install
+6, python simple.py or python t_server.py

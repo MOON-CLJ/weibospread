@@ -3,7 +3,7 @@
 from flask import Flask
 from flask import render_template, request, session, redirect, url_for, flash
 from flask.ext.pymongo import PyMongo
-from weibo import APIClient
+from weibo import Client
 import simplejson as json
 import re
 from gexf import Gexf
@@ -13,6 +13,7 @@ import buchheim
 import math
 import random
 import base62
+import time
 
 app = Flask(__name__)
 mongo = PyMongo(app)
@@ -24,9 +25,17 @@ APP_SECRET = 'df544af4a9e30abe16e715cb4d0be423'
 CALLBACK_URL = 'http://idec.buaa.edu.cn:8080/callback'
 
 
+def login_user(session):
+    if 'uid' in session:
+        user = mongo.db.users.find_one_or_404({"uid": session["uid"]})
+        if user["expires_in"] > time.time():
+            return user
+    return None
+
+
 @app.route('/')
 def index():
-    if "uid" in session:
+    if login_user(session):
         screen_name = session["screen_name"]
         profile_image_url = session["profile_image_url"]
         return render_template('simple.html', btnuserpicvisible='inline',
@@ -37,22 +46,23 @@ def index():
 
 @app.route('/search')
 def search():
-    if "uid" in session:
-        user = mongo.db.users.find_one_or_404({"uid": session["uid"]})
-        client = APIClient(app_key=APP_KEY, app_secret=APP_SECRET, redirect_uri=CALLBACK_URL)
-        client.set_access_token(user["access_token"], user["expires_in"])
+    user = login_user(session)
+    if user:
+        client = Client(APP_KEY, APP_SECRET, CALLBACK_URL)
+        client.set_token(user["access_token"])
 
         screen_name = request.args.get('q', '')
         screen_name = screen_name.strip("@ \r\n\t")
         try:
-            target_user = client.users__show(screen_name=screen_name)
+            target_user = client.get('users/show', screen_name=screen_name)
         except:
             flash(u"您输入的昵称不存在,请重新输入")
             return redirect(url_for('index'))
+
         try:
-            statuses = client.statuses__user_timeline(uid=target_user["id"], count=50)["statuses"]
+            statuses = client.get('statuses/user_timeline', uid=target_user["id"], count=50)["statuses"]
         except:
-            flash(u"获取微博信息失败")
+            flash(u"获取微博信息失败,请刷新")
             statuses = []
 
         screen_name = session["screen_name"]
@@ -125,9 +135,8 @@ def gweibo_fweb(id, client, since_id=0):
     reposts = None
     base_since_id = since_id
     while 1:
-        more_reposts = client.statuses__repost_timeline(id=int(id),
-                                                        count=200, page=page, since_id=base_since_id)
-        more_reposts = json.loads(json.dumps(more_reposts))
+        more_reposts = client.get('statuses/repost_timeline', id=int(id),
+                                  count=200, page=page, since_id=base_since_id)
         if len(more_reposts["reposts"]) == 0:
             break
         page += 1
@@ -165,13 +174,16 @@ def f_db_and_g_web(id, client):
 
 @app.route('/status')
 def status():
-    user = mongo.db.users.find_one_or_404({"uid": session["uid"]})
-    client = APIClient(app_key=APP_KEY, app_secret=APP_SECRET, redirect_uri=CALLBACK_URL)
-    client.set_access_token(user["access_token"], user["expires_in"])
+    user = login_user(session)
+    if user is None:
+        return ""
+
+    client = Client(APP_KEY, APP_SECRET, CALLBACK_URL)
+    client.set_token(user["access_token"])
 
     id = request.args.get('id', '')
     try:
-        source_weibo = client.statuses__show(id=int(id))
+        source_weibo = client.get('statuses/show', id=int(id))
         reposts = f_db_and_g_web(id=int(id), client=client)
         if reposts is not None:
             reposts = reposts["reposts"]
@@ -251,48 +263,16 @@ def graph():
     return redirect(url_for('login'))
 
 
-@app.route('/callback')
-def callback():
-    code = request.args.get('code', '')
-    client = APIClient(app_key=APP_KEY, app_secret=APP_SECRET, redirect_uri=CALLBACK_URL)
-    try:
-        r = client.request_access_token(code)
-        access_token = r.access_token
-        expires_in = r.expires_in
-        # TODO: 在此可保存access token
-        client.set_access_token(access_token, expires_in)
-    except:
-        flash(u'微博登录没有成功')
-        return redirect(url_for('login'))
-
-    try:
-        uid = client.account__get_uid()['uid']
-        userinfo = client.get.users__show(uid=uid)
-        screen_name = userinfo["screen_name"]
-        profile_image_url = userinfo["profile_image_url"]
-        mongo.db.users.update({"uid": str(uid)},
-                              {"$set": {"uid": str(uid), "access_token": access_token,
-                              "expires_in": expires_in, "screen_name": screen_name,
-                              "profile_image_url": profile_image_url}}, upsert=True, safe=True)
-        session['uid'] = str(uid)
-        session['screen_name'] = screen_name
-        session["profile_image_url"] = profile_image_url
-        return redirect(url_for('index'))
-    except Exception:
-        flash(u'获取用户微博信息没有成功')
-        return redirect(url_for('login'))
-
-
 @app.route('/suggest', methods=['GET'])
 def suggest():
-    if "uid" in session:
+    user = login_user(session)
+    if user:
         query = request.args.get('query', '')
-        user = mongo.db.users.find_one_or_404({"uid": session["uid"]})
-        client = APIClient(app_key=APP_KEY, app_secret=APP_SECRET, redirect_uri=CALLBACK_URL)
-        client.set_access_token(user["access_token"], user["expires_in"])
+        client = Client(APP_KEY, APP_SECRET, CALLBACK_URL)
+        client.set_token(user["access_token"])
         try:
             results = []
-            for s in client.search__suggestions__at_users(q=query, type=0, count=10):
+            for s in client.get('search/suggestions/at_users', q=query, type=0, count=10):
                 results.append(s['nickname'])
             return json.dumps({'query': query, 'suggestions': results})
         except:
@@ -301,10 +281,43 @@ def suggest():
     return json.dumps({'query': query, 'suggestions': []})
 
 
+@app.route('/callback')
+def callback():
+    code = request.args.get('code', '')
+    client = Client(APP_KEY, APP_SECRET, CALLBACK_URL)
+    try:
+        client.set_code(code)
+        r = client.token_info
+        uid = r['uid']
+        access_token = r['access_token']
+        expires_in = r['expires_in']
+    except:
+        flash(u'微博登录没有成功')
+        return redirect(url_for('login'))
+
+    try:
+        userinfo = client.get('users/show', uid=uid)
+        screen_name = userinfo["screen_name"]
+        profile_image_url = userinfo["profile_image_url"]
+
+        mongo.db.users.update({"uid": uid},
+                              {"$set": {"uid": uid, "access_token": access_token,
+                              "expires_in": expires_in, "screen_name": screen_name,
+                              "profile_image_url": profile_image_url}}, upsert=True, safe=True)
+
+        session['uid'] = uid
+        session['screen_name'] = screen_name
+        session["profile_image_url"] = profile_image_url
+        return redirect(url_for('index'))
+    except Exception:
+        flash(u'获取用户微博信息没有成功')
+        return redirect(url_for('login'))
+
+
 @app.route('/login', methods=['GET'])
 def login():
-    client = APIClient(app_key=APP_KEY, app_secret=APP_SECRET, redirect_uri=CALLBACK_URL)
-    url = client.get_authorize_url()
+    client = Client(APP_KEY, APP_SECRET, CALLBACK_URL)
+    url = client.authorize_url
     flash(u'请用新浪微博登录')
     return render_template('simple.html', btnuserpicvisible='none', btnloginvisible='inline', url=url)
 
