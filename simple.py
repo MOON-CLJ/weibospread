@@ -139,7 +139,7 @@ reposts = mongo.db.weibos.find_and_modify(query={"id": id},
 def gweibo_fweb(id, client, reposts_count):
     reposts = []
 
-    for i in range(1, reposts_count / 200 + 1)[::-1]:
+    for i in range(1, reposts_count / 200 + 2)[::-1]:
         retry = 0
         while retry < 3:
             retry += 1
@@ -148,7 +148,8 @@ def gweibo_fweb(id, client, reposts_count):
                                           count=200, page=i)
                 if len(more_reposts["reposts"]) > 0:
                     break
-            except:
+            except Exception, e:
+                app.logger.error(e)
                 pass
         else:
             app.logger.error("get reposts of %s fail page %d" % (id, i))
@@ -178,7 +179,8 @@ def status():
             reposts_count = source_weibo["reposts_count"]
             if reposts_count > 0:
                 break
-        except:
+        except Exception, e:
+            app.logger.error(e)
             pass
     else:
         app.logger.error("get source weibo of %s fail" % id)
