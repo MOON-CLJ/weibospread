@@ -1,0 +1,8 @@
+flask
+gevent
+pymongo
+Flask-PyMongo
+simplejson
+requests
+lxml
+tornado

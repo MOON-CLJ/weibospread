@@ -139,7 +139,7 @@ reposts = mongo.db.weibos.find_and_modify(query={"id": id},
 def gweibo_fweb(id, client, reposts_count):
     reposts = []
 
-    for i in range(1, reposts_count / 200 + 2)[::-1]:
+    for i in range(1, int(math.ceil(reposts_count / 200.0)) + 1)[::-1]:
         retry = 0
         while retry < 3:
             retry += 1
