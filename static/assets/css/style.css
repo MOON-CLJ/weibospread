@@ -164,7 +164,18 @@ input, button, select, textarea {
 
 .wb-k{ border:2px solid #a4b084; padding:5px;  border-radius:10px; width:813px; margin:10px auto; margin-top:24px;}
 
-.highlightText{ margin:0px; width:770px; margin-bottom:14px; margin-top:8px;}
+.highlightText { 
+  margin: 0px; 
+  width: 770px; 
+  margin-bottom: 14px; 
+  margin-top: 8px;
+}
+
+.ct-tags {
+  font-size: 17px;
+  margin-left: 1%;
+  color: #D14836;
+}
 
 .alert {
   width: 49%;

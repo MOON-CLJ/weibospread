@@ -65,6 +65,12 @@ def search():
             flash(u"获取微博信息失败,请刷新")
             statuses = []
 
+        for i in xrange(len(statuses)):
+            weibo_url = "http://weibo.com/" \
+                + str(statuses[i]["user"]["id"]) \
+                + "/" + base62.mid_to_str(statuses[i]["mid"])
+            statuses[i]["weibo_url"] = weibo_url
+
         screen_name = session["screen_name"]
         profile_image_url = session["profile_image_url"]
         return render_template('weibolist.html', btnuserpicvisible='inline',
