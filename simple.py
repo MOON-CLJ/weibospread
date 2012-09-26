@@ -384,8 +384,11 @@ def login():
 app.secret_key = 'youknowwhat,iamsocute'
 if __name__ == '__main__':
     #dev
-    APP_KEY = '1966311272'
-    APP_SECRET = '57d36e0eaef033593f4bb6f745a67c5f'
+    #APP_KEY = '1966311272'
+    #APP_SECRET = '57d36e0eaef033593f4bb6f745a67c5f'
+
+    APP_KEY = '999494363'
+    APP_SECRET = '53384a9bd6c88d1fa44f9d5ede95d58b'
     CALLBACK_URL = 'http://127.0.0.1:8080/callback'
 
     app.debug = True
