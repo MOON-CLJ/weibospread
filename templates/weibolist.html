@@ -6,7 +6,7 @@
         <p>
 	  <img src="{{ tar_profile_image_url }}" />
 	  <a href="/search?q={{ tar_screen_name }}">{{ tar_screen_name }}</a>
-	  {{ statuses[0]["user"]["location"] }}
+	  {{ tar_location }}
 	</p>
       {% endif %}
       <form action="/search">

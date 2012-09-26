@@ -67,6 +67,7 @@ def search():
             t_statuses = []
             tar_screen_name = None
             tar_profile_image_url = None
+            tar_location = None
 
             while 1:
                 try:
@@ -76,6 +77,7 @@ def search():
                     if tar_screen_name is None and len(statuses) > 0:
                         tar_profile_image_url = statuses[0]["user"]["profile_image_url"]
                         tar_screen_name = statuses[0]["user"]["name"]
+                        tar_location = statuses[0]["user"]["location"]
                     for status in statuses:
                         if t in status["text"] or [t in status["retweeted_status"]["text"]
                                 if "retweeted_status" in status else False][0]:
@@ -105,6 +107,7 @@ def search():
             page = p
             tar_screen_name = target_user["screen_name"]
             tar_profile_image_url = target_user["profile_image_url"]
+            tar_location = target_user["location"]
 
             try:
                 statuses = client.get('statuses/user_timeline', uid=u, count=50, page=page)["statuses"]
@@ -125,6 +128,7 @@ def search():
                                screen_name=screen_name, profile_image_url=profile_image_url,
                                tar_screen_name=tar_screen_name,
                                tar_profile_image_url=tar_profile_image_url,
+                               tar_location=tar_location,
                                statuses=statuses)
 
     return redirect(url_for('login'))
