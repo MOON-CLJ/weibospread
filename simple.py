@@ -51,19 +51,54 @@ def search():
         client = Client(APP_KEY, APP_SECRET, CALLBACK_URL)
         client.set_token(user["access_token"])
 
-        screen_name = request.args.get('q', '')
-        screen_name = screen_name.strip("@ \r\n\t")
-        try:
-            target_user = client.get('users/show', screen_name=screen_name)
-        except:
-            flash(u"您输入的昵称不存在,请重新输入")
-            return redirect(url_for('index'))
+        t = request.args.get('t', '')
+        q = request.args.get('q', '')
 
-        try:
-            statuses = client.get('statuses/user_timeline', uid=target_user["id"], count=50)["statuses"]
-        except:
-            flash(u"获取微博信息失败,请刷新")
-            statuses = []
+        q = q.strip("@ \r\n\t")
+        t = t.strip("@ \r\n\t")
+
+        if t != "":
+            retry = 0
+            page = 1
+            while 1:
+                try:
+                    statuses = client.get('statuses/user_timeline', uid=q, count=100, page=page)["statuses"]
+                    flag = False
+                    for status in statuses:
+                        if t in status["text"] or [t in status["retweeted_status"]["text"]
+                                if "retweeted_status" in status else False][0]:
+                            statuses = [status]
+                            flag = True
+                            break
+
+                    if flag:
+                        break
+                    elif retry > 5:
+                        flash(u"没有搜索到相关微博")
+                        statuses = []
+                        break
+                    else:
+                        retry += 1
+                        page += 1
+                        continue
+                except Exception, e:
+                    raise
+                    app.logger.error(e)
+                    retry += 1
+        else:
+            try:
+                target_user = client.get('users/show', screen_name=q)
+            except:
+                flash(u"您输入的昵称不存在,请重新输入")
+                return redirect(url_for('index'))
+
+            q = target_user["id"]
+
+            try:
+                statuses = client.get('statuses/user_timeline', uid=q, count=50)["statuses"]
+            except:
+                flash(u"获取微博信息失败,请刷新")
+                statuses = []
 
         for i in xrange(len(statuses)):
             weibo_url = "http://weibo.com/" \
@@ -74,7 +109,7 @@ def search():
         screen_name = session["screen_name"]
         profile_image_url = session["profile_image_url"]
         return render_template('weibolist.html', btnuserpicvisible='inline',
-                               btnloginvisible='none', screen_name=screen_name, profile_image_url=profile_image_url, statuses=statuses)
+                               btnloginvisible='none', q=q, screen_name=screen_name, profile_image_url=profile_image_url, statuses=statuses)
 
     return redirect(url_for('login'))
 

@@ -5,11 +5,16 @@
       {% if statuses %}
         <p>
 	  <img src="{{ statuses[0]["user"]["profile_image_url"] }}" />
-	  {{ statuses[0]["user"]["name"] }}
+	  <a href="/search?q={{ statuses[0]["user"]["name"] }}">{{ statuses[0]["user"]["name"] }}</a>
 	  {{ statuses[0]["user"]["location"] }}
 	</p>
       {% endif %}
+      <form action="/search">
+	<input name="t" type="text" placeholder="搜索此用户最近的微博">
+	<input name="q" type="hidden" value="{{ q }}">
+      </form>	
     </div>
+ 
     <div id="weibos">
       <div class="wb-k">
 	{% if statuses %}
