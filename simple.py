@@ -53,38 +53,47 @@ def search():
 
         t = request.args.get('t', '')
         q = request.args.get('q', '')
+        p = request.args.get('p', 1)
+        u = request.args.get('u', 0)
 
         q = q.strip("@ \r\n\t")
         t = t.strip("@ \r\n\t")
+        p = int(p)
 
-        if t != "":
+        if t != '':
             retry = 0
-            page = 1
+            page = p
+            n_page = p + 3
+            t_statuses = []
+            tar_screen_name = None
+            tar_profile_image_url = None
+
             while 1:
                 try:
-                    statuses = client.get('statuses/user_timeline', uid=q, count=100, page=page)["statuses"]
-                    flag = False
+                    if retry > 5:
+                        break
+                    statuses = client.get('statuses/user_timeline', uid=u, count=100, page=page)["statuses"]
+                    if tar_screen_name is None and len(statuses) > 0:
+                        tar_profile_image_url = statuses[0]["user"]["profile_image_url"]
+                        tar_screen_name = statuses[0]["user"]["name"]
                     for status in statuses:
                         if t in status["text"] or [t in status["retweeted_status"]["text"]
                                 if "retweeted_status" in status else False][0]:
-                            statuses = [status]
-                            flag = True
-                            break
+                            t_statuses.append(status)
 
-                    if flag:
-                        break
-                    elif retry > 5:
-                        flash(u"没有搜索到相关微博")
-                        statuses = []
+                    if page == n_page:
                         break
                     else:
-                        retry += 1
                         page += 1
-                        continue
                 except Exception, e:
-                    raise
                     app.logger.error(e)
                     retry += 1
+
+            if len(t_statuses) == 0:
+                flash(u"没有搜索到相关微博,请尝试下一页或者采用其他关键词")
+
+            statuses = t_statuses
+            p = page
         else:
             try:
                 target_user = client.get('users/show', screen_name=q)
@@ -92,10 +101,13 @@ def search():
                 flash(u"您输入的昵称不存在,请重新输入")
                 return redirect(url_for('index'))
 
-            q = target_user["id"]
+            u = target_user["id"]
+            page = p
+            tar_screen_name = target_user["screen_name"]
+            tar_profile_image_url = target_user["profile_image_url"]
 
             try:
-                statuses = client.get('statuses/user_timeline', uid=q, count=50)["statuses"]
+                statuses = client.get('statuses/user_timeline', uid=u, count=50, page=page)["statuses"]
             except:
                 flash(u"获取微博信息失败,请刷新")
                 statuses = []
@@ -109,7 +121,11 @@ def search():
         screen_name = session["screen_name"]
         profile_image_url = session["profile_image_url"]
         return render_template('weibolist.html', btnuserpicvisible='inline',
-                               btnloginvisible='none', q=q, screen_name=screen_name, profile_image_url=profile_image_url, statuses=statuses)
+                               btnloginvisible='none', t=t, q=q, p=int(p), u=u,
+                               screen_name=screen_name, profile_image_url=profile_image_url,
+                               tar_screen_name=tar_screen_name,
+                               tar_profile_image_url=tar_profile_image_url,
+                               statuses=statuses)
 
     return redirect(url_for('login'))
 

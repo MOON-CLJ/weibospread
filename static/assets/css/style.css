@@ -110,6 +110,15 @@ input, button, select, textarea {
   position: relative;
   line-height: 1;
 }
+
+#p_nav {
+  color: #0388A6;
+  font-size: 18px;
+  margin-right: 17%;
+  padding: 5px 5px 5px 5px; 
+  float: right;
+}
+
 #user {
   width: 61.8%;
   margin-left:14.8%;  
