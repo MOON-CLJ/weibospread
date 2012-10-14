@@ -4,20 +4,25 @@ from flask import Flask
 from flask import render_template, request, session, redirect, url_for, flash
 from flask.ext.pymongo import PyMongo
 from weibo import Client
-import simplejson as json
-import re
 from gexf import Gexf
 from lxml import etree
 from gen import Tree
+from utils4scrapy.weibo2db import Weibo2Db
+from utils4scrapy.utils import load_reposts
+from utils4scrapy import base62
 import buchheim
 import math
 import random
-import base62
 import time
+import redis
+import simplejson as json
+import re
+
 
 app = Flask(__name__)
 mongo = PyMongo(app)
-
+weibo2db = Weibo2Db()
+r = redis.Redis('localhost', 6379)
 
 #prod
 APP_KEY = '4131380600'
@@ -74,13 +79,14 @@ def search():
                     if retry > 5:
                         break
                     statuses = client.get('statuses/user_timeline', uid=u, count=100, page=page)["statuses"]
+                    weibo2db.statuses(statuses)
                     if tar_screen_name is None and len(statuses) > 0:
                         tar_profile_image_url = statuses[0]["user"]["profile_image_url"]
                         tar_screen_name = statuses[0]["user"]["name"]
                         tar_location = statuses[0]["user"]["location"]
                     for status in statuses:
                         if t in status["text"] or [t in status["retweeted_status"]["text"]
-                                if "retweeted_status" in status else False][0]:
+                                                   if "retweeted_status" in status else False][0]:
                             t_statuses.append(status)
 
                     if page == n_page:
@@ -111,6 +117,7 @@ def search():
 
             try:
                 statuses = client.get('statuses/user_timeline', uid=u, count=50, page=page)["statuses"]
+                weibo2db.statuses(statuses)
             except:
                 flash(u"获取微博信息失败,请刷新")
                 statuses = []
@@ -190,37 +197,6 @@ def add_node_edge(drawtree, graph, rank, ct, parent=None, max_width=0):
     for child in drawtree.children:
         add_node_edge(child, graph, rank, ct, drawtree, max_width)
 
-"""
-reposts = mongo.db.weibos.find_and_modify(query={"id": id},
-                                          update={"$pushAll": {"reposts": more_reposts}, "$set": {"since_id": since_id}},
-                                          new=True)
-"""
-
-
-def gweibo_fweb(id, client, reposts_count):
-    reposts = []
-
-    for i in range(1, int(math.ceil(reposts_count / 200.0)) + 1)[::-1]:
-        retry = 0
-        while retry < 3:
-            retry += 1
-            try:
-                more_reposts = client.get('statuses/repost_timeline', id=int(id),
-                                          count=200, page=i)
-                if len(more_reposts["reposts"]) > 0:
-                    break
-            except Exception, e:
-                app.logger.error(e)
-                pass
-        else:
-            app.logger.error("get reposts of %s fail page %d" % (id, i))
-            return reposts
-
-        more_reposts['reposts'].reverse()
-        reposts.extend(more_reposts['reposts'])
-
-    return reposts
-
 
 @app.route('/status')
 def status():
@@ -232,22 +208,9 @@ def status():
     client.set_token(user["access_token"])
 
     id = request.args.get('id', '')
-    retry = 0
-    while retry < 3:
-        retry += 1
-        try:
-            source_weibo = client.get('statuses/show', id=int(id))
-            reposts_count = source_weibo["reposts_count"]
-            if reposts_count > 0:
-                break
-        except Exception, e:
-            app.logger.error(e)
-            pass
-    else:
-        app.logger.error("get source weibo of %s fail" % id)
-        return ""
+    since_id = request.args.get('since_id', 0)
 
-    reposts = gweibo_fweb(id=int(id), client=client, reposts_count=reposts_count)
+    reposts, source_weibo, since_id = load_reposts(app, weibo2db, r, client, id, since_id)
     if len(reposts) == 0:
         return ""
 
@@ -265,7 +228,7 @@ def status():
 
     for repost in reposts:
         try:
-            node = repost["user"]["screen_name"]
+            node = repost["user"]["name"]
             wid = repost["id"]
             img_url = repost["user"]["profile_image_url"]
             location = repost["user"]["location"]
@@ -384,11 +347,8 @@ def login():
 app.secret_key = 'youknowwhat,iamsocute'
 if __name__ == '__main__':
     #dev
-    #APP_KEY = '1966311272'
-    #APP_SECRET = '57d36e0eaef033593f4bb6f745a67c5f'
-
-    APP_KEY = '999494363'
-    APP_SECRET = '53384a9bd6c88d1fa44f9d5ede95d58b'
+    APP_KEY = '1966311272'
+    APP_SECRET = '57d36e0eaef033593f4bb6f745a67c5f'
     CALLBACK_URL = 'http://127.0.0.1:8080/callback'
 
     app.debug = True
