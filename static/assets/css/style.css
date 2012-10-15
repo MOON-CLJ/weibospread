@@ -154,15 +154,16 @@ input, button, select, textarea {
 }
 
 .statuscontent {
-  position:relative;
-  margin-top:3%;
-  margin-left:5%;
+  position: relative;
+  margin-top: 3%;
+  margin-left: 5%;
   font-size: 18px; 
   line-height: 30px;
 }
 .repostcount {
-  position:relative;
-  float:right;
+  position: relative;
+  float: right;
+  margin: 0px;
   color: #0388A6; 
 }
 
