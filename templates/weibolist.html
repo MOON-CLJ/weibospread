@@ -18,27 +18,25 @@
     {% if statuses %}
       <div id="weibos">
         <div class="wb-k">
-  	  {% if statuses %}
-	    {% for status in statuses %}
-	      <div class="highlightText">
-                <a href="/graph?id={{ status.id }}">
-	          <h3 class="statustitle">{{ status.text }}</h3>
-	        </a>
-	        <p class="ct-tags">
-	          <a href="{{ status.weibo_url }}" class="ct-tags">去新浪微博</a>
-		  <a href="/graph?id={{ status.id }}" class="ct-tags">此微博图谱</a>
-	          {% if "retweeted_status" in status %}
-		  <a href="/graph?id={{ status.retweeted_status.id }}" class="ct-tags">源微博图谱</a>
-		  {% endif %}
-	        </p>
+			{% for status in statuses %}
+			  <div class="highlightText">
+			  	<a href="/graph?id={{ status.id }}">
+				  <h4 class="statustitle">{{ status.text }}</h4>
+				</a>
+				<p class="ct-tags">
+				  <a href="{{ status.weibo_url }}" class="ct-tags">去新浪微博</a>
+			  	  <a href="/graph?id={{ status.id }}" class="ct-tags">此微博图谱</a>
+				  {% if "retweeted_status" in status %}
+			        <a href="/graph?id={{ status.retweeted_status.id }}" class="ct-tags">源微博图谱</a>
+			      {% endif %}
+				</p>
 
-	        {% if "retweeted_status" in status %}
-		  <p class="statuscontent">{{ status.retweeted_status.text }}</p>
-	        {% endif %}
-	        <h3 class="repostcount">转发:{{ status.reposts_count }} 评论:{{ status.comments_count }}</h3>
-       	      </div>
-	    {% endfor %}
-	  {% endif %}
+				{% if "retweeted_status" in status %}
+			      <p class="statuscontent">{{ status.retweeted_status.text }}</p>
+				{% endif %}
+				<h4 class="repostcount">转发:{{ status.reposts_count }} 评论:{{ status.comments_count }}</h4>
+			  </div>
+			{% endfor %}
         </div>
       </div>
     {% endif %}
