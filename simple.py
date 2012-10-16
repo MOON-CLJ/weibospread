@@ -214,10 +214,6 @@ def status():
     if len(reposts) == 0:
         return ""
 
-    for repost in reposts:
-        print "-- " * 10
-        print repost['user']['name']
-        print repost['text']
     #root
     tree_nodes = []
     node = source_weibo["user"]["name"]
