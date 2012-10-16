@@ -220,10 +220,12 @@ def status():
     location = source_weibo["user"]["location"]
     datetime = source_weibo["created_at"]
     img_url = source_weibo["user"]["profile_image_url"]
-    weibo_url = "http://weibo.com/" + \
-        str(source_weibo["user"]["id"]) + \
-        "/" + base62.mid_to_str(source_weibo["mid"])
-    print weibo_url
+    url_user_str = str(source_weibo["user"]["id"])
+    url_weibo_str = base62.mid_to_str(source_weibo["mid"])
+    if url_weibo_str.startswith("z"):
+        url_weibo_str = "z0" + url_weibo_str[1:]
+
+    weibo_url = "http://weibo.com/" + url_user_str + "/" + url_weibo_str
 
     tree_nodes.append(Tree(node, location, datetime, int(id), img_url, weibo_url))
 
@@ -234,9 +236,13 @@ def status():
             img_url = repost["user"]["profile_image_url"]
             location = repost["user"]["location"]
             datetime = repost['created_at']
-            weibo_url = "http://weibo.com/" + \
-                str(repost["user"]["id"]) + \
-                "/" + base62.mid_to_str(repost["mid"])
+            url_user_str = str(repost["user"]["id"])
+            url_weibo_str = base62.mid_to_str(repost["mid"])
+            if url_weibo_str.startswith("z"):
+                url_weibo_str = "z0" + url_weibo_str[1:]
+
+            weibo_url = "http://weibo.com/" + url_user_str + "/" + url_weibo_str
+
             tree_nodes.append(Tree(node, location, datetime, wid, img_url, weibo_url))
         except:
             app.logger.error(repost)
