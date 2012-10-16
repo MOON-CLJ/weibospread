@@ -214,6 +214,10 @@ def status():
     if len(reposts) == 0:
         return ""
 
+    for repost in reposts:
+        print "-- " * 10
+        print repost['user']['name']
+        print repost['text']
     #root
     tree_nodes = []
     node = source_weibo["user"]["name"]
@@ -249,13 +253,17 @@ def status():
             continue
 
         repost_users = re.findall(u'/@([a-zA-Z-_\u0391-\uFFE5]+)', repost["text"])
-        if len(repost_users):
+        parent = 0
+        while parent < len(repost_users):
+            flag = False
             for node in tree_nodes[-2::-1]:
-                if node.node == repost_users[0]:
+                if node.node == repost_users[parent]:
                     node.append_child(tree_nodes[-1])
+                    flag = True
                     break
-            else:
-                tree_nodes[0].append_child(tree_nodes[-1])
+            if flag:
+                break
+            parent += 1
         else:
             tree_nodes[0].append_child(tree_nodes[-1])
 
