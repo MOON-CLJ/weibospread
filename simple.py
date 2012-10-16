@@ -223,6 +223,7 @@ def status():
     weibo_url = "http://weibo.com/" + \
         str(source_weibo["user"]["id"]) + \
         "/" + base62.mid_to_str(source_weibo["mid"])
+    print weibo_url
 
     tree_nodes.append(Tree(node, location, datetime, int(id), img_url, weibo_url))
 
@@ -241,16 +242,13 @@ def status():
             app.logger.error(repost)
             continue
 
-        repost_users = re.findall(r'//@(\S+?):', repost["text"])
+        repost_users = re.findall(u'/@([a-zA-Z-_\u0391-\uFFE5]+)', repost["text"])
         if len(repost_users):
-            flag = True
-            for node in tree_nodes[::-1]:
+            for node in tree_nodes[-2::-1]:
                 if node.node == repost_users[0]:
                     node.append_child(tree_nodes[-1])
-                    flag = False
                     break
-
-            if flag:
+            else:
                 tree_nodes[0].append_child(tree_nodes[-1])
         else:
             tree_nodes[0].append_child(tree_nodes[-1])
