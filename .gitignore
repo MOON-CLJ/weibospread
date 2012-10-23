@@ -1,5 +1,5 @@
 *~
-*.swp
+*.sw[onp]
 *.pyc
 *.log
 .DS_Store

@@ -146,43 +146,20 @@ class Count:
         self.count = count
 
 
-def node_rank(root):
-    import Queue
-    q = Queue.Queue()
-    q.put(root)
-    node_length = {}
-    while not q.empty():
-        node = q.get()
-        node_length[node] = len(node.children)
-        for n in node.children:
-            q.put(n)
-    node_length = sorted(node_length.iteritems(), key=lambda(x, y): y, reverse=True)
-    if len(node_length) > 5:
-        node_length = node_length[:5]
-    rank_node = []
-    for node, value in node_length:
-        if value > 5:
-            rank_node.append(node)
-    return rank_node
-
-
-def add_node_edge(drawtree, graph, rank, ct, parent=None, max_width=0):
+def add_node_edge(drawtree, graph, ct, parent=None, max_width=0):
     length = len(drawtree.children)
     size = math.log((math.pow(length, 0.3) + math.sqrt(4)), 4)
     b, r, g = "217", "254", "240"
-    if length > 6 and drawtree not in rank:
+    if length > 6:
         b = str(random.randint(0, 255))
         r = str(random.randint(100, 255))
         g = str(random.randint(0, 255))
-    if drawtree in rank:
-        b = '0'
-        r = '255'
-        g = '0'
 
     scale_y = max_width / 200 + 1
     node = graph.addNode(drawtree.tree.wid, drawtree.tree.node,
                          b=b, r=r, g=g, x=str(drawtree.x), y=str(drawtree.y * scale_y * 10), z="0.0",
                          size=str(size))
+
     node.addAttribute("img_url", drawtree.tree.img_url)
     node.addAttribute("name", drawtree.tree.node)
     node.addAttribute("location", drawtree.tree.location)
@@ -195,7 +172,7 @@ def add_node_edge(drawtree, graph, rank, ct, parent=None, max_width=0):
         graph.addEdge(ct.count, str(drawtree.tree.wid), str(parent.tree.wid))
 
     for child in drawtree.children:
-        add_node_edge(child, graph, rank, ct, drawtree, max_width)
+        add_node_edge(child, graph, ct, drawtree, max_width)
 
 
 @app.route('/status')
@@ -249,17 +226,18 @@ def status():
             continue
 
         repost_users = re.findall(u'/@([a-zA-Z-_\u0391-\uFFE5]+)', repost["text"])
-        parent = 0
-        while parent < len(repost_users):
+        parent_idx = 0
+        while parent_idx < len(repost_users):
             flag = False
             for node in tree_nodes[-2::-1]:
-                if node.node == repost_users[parent]:
+                if node.node == repost_users[parent_idx]:
                     node.append_child(tree_nodes[-1])
                     flag = True
                     break
+
             if flag:
                 break
-            parent += 1
+            parent_idx += 1
         else:
             tree_nodes[0].append_child(tree_nodes[-1])
 
@@ -274,8 +252,7 @@ def status():
     graph.addNodeAttribute("repost_num", type="integer", force_id="repost_num")
     graph.addNodeAttribute("weibo_url", type="URI", force_id="weibo_url")
 
-    rank = node_rank(tree_nodes[0])
-    add_node_edge(dt, graph, rank, Count(), max_width=max_width)
+    add_node_edge(dt, graph, Count(), max_width=max_width)
 
     return etree.tostring(gexf.getXML(), pretty_print=True, encoding='utf-8', xml_declaration=True)
 

@@ -1,10 +1,5 @@
 #http://llimllib.github.com/pymag-trees/
 
-from gen import Tree
-from operator import lt, gt
-from sys import stdout
-import math
-
 class DrawTree(object):
     def __init__(self, tree, parent=None, depth=0, number=1):
         self.x = -1.
@@ -152,7 +147,7 @@ def ancestor(vil, v, default_ancestor):
     #the relevant text is at the bottom of page 7 of
     #"Improving Walker's Algorithm to Run in Linear Time" by Buchheim et al, (2002)
     #http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.16.8757&rep=rep1&type=pdf
-    if vil.ancestor in v.children:
+    if vil.ancestor in v.parent.children:
         return vil.ancestor
     else:
         return default_ancestor
@@ -174,8 +169,3 @@ def second_walk(v, m=0, depth=0, min=None, max_depth=0, max_width=0):
         min, max_depth, max_width = second_walk(w, m + v.mod, depth+1, min, max_depth, max_width)
 
     return min, max_depth, max_width
-
-if __name__ == "__main__":
-    from demo_trees import trees
-
-    dt = buchheim(trees[9])
