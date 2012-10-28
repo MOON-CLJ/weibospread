@@ -97,7 +97,7 @@ def search():
                     app.logger.error(e)
                     retry += 1
 
-            if len(t_statuses) == 0:
+            if not t_statuses:
                 flash(u"没有搜索到相关微博,请尝试下一页或者采用其他关键词")
 
             statuses = t_statuses
@@ -123,9 +123,7 @@ def search():
                 statuses = []
 
         for i in xrange(len(statuses)):
-            weibo_url = "http://weibo.com/" \
-                + str(statuses[i]["user"]["id"]) \
-                + "/" + base62.mid_to_str(statuses[i]["mid"])
+            weibo_url = base62.weiboinfo2url(statuses[i]['user']['id'], statuses[i]['mid'])
             statuses[i]["weibo_url"] = weibo_url
 
         screen_name = session["screen_name"]
@@ -197,12 +195,7 @@ def status():
     location = source_weibo["user"]["location"]
     datetime = source_weibo["created_at"]
     img_url = source_weibo["user"]["profile_image_url"]
-    url_user_str = str(source_weibo["user"]["id"])
-    url_weibo_str = base62.mid_to_str(source_weibo["mid"])
-    if url_weibo_str.startswith("z"):
-        url_weibo_str = "z0" + url_weibo_str[1:]
-
-    weibo_url = "http://weibo.com/" + url_user_str + "/" + url_weibo_str
+    weibo_url = base62.weiboinfo2url(source_weibo['user']['id'], source_weibo['mid'])
 
     tree_nodes.append(Tree(node, location, datetime, int(id), img_url, weibo_url))
 
@@ -213,12 +206,7 @@ def status():
             img_url = repost["user"]["profile_image_url"]
             location = repost["user"]["location"]
             datetime = repost['created_at']
-            url_user_str = str(repost["user"]["id"])
-            url_weibo_str = base62.mid_to_str(repost["mid"])
-            if url_weibo_str.startswith("z"):
-                url_weibo_str = "z0" + url_weibo_str[1:]
-
-            weibo_url = "http://weibo.com/" + url_user_str + "/" + url_weibo_str
+            weibo_url = base62.weiboinfo2url(repost['user']['id'], repost['mid'])
 
             tree_nodes.append(Tree(node, location, datetime, wid, img_url, weibo_url))
         except:
