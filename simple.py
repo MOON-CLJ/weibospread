@@ -53,8 +53,7 @@ def index():
 def search():
     user = login_user(session)
     if user:
-        client = Client(APP_KEY, APP_SECRET, CALLBACK_URL)
-        client.set_token(user["access_token"])
+        client = Client(APP_KEY, APP_SECRET, CALLBACK_URL, user['access_token'], user['expires_in'])
 
         t = request.args.get('t', '')
         q = request.args.get('q', '')
@@ -179,9 +178,7 @@ def status():
     if user is None:
         return ""
 
-    client = Client(APP_KEY, APP_SECRET, CALLBACK_URL)
-    client.set_token(user["access_token"])
-
+    client = Client(APP_KEY, APP_SECRET, CALLBACK_URL, user['access_token'], user['expires_in'])
     id = request.args.get('id', '')
     since_id = request.args.get('since_id', 0)
 
@@ -263,8 +260,8 @@ def suggest():
     user = login_user(session)
     if user:
         query = request.args.get('query', '')
-        client = Client(APP_KEY, APP_SECRET, CALLBACK_URL)
-        client.set_token(user["access_token"])
+        client = Client(APP_KEY, APP_SECRET, CALLBACK_URL, user['access_token'], user['expires_in'])
+
         try:
             results = []
             for s in client.get('search/suggestions/at_users', q=query, type=0, count=10):
@@ -285,7 +282,7 @@ def callback():
         r = client.token_info
         uid = r['uid']
         access_token = r['access_token']
-        expires_in = r['expires_in']
+        expires_in = r['expires_at']
     except:
         flash(u'微博登录没有成功')
         return redirect(url_for('login'))
