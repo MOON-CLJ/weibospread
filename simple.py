@@ -53,7 +53,7 @@ def index():
 def search():
     user = login_user(session)
     if user:
-        client = Client(APP_KEY, APP_SECRET, CALLBACK_URL, user['access_token'], user['expires_in'])
+        client = Client(APP_KEY, APP_SECRET, CALLBACK_URL, access_token=user['access_token'], expires_at=user['expires_in'])
 
         t = request.args.get('t', '')
         q = request.args.get('q', '')
@@ -178,7 +178,7 @@ def status():
     if user is None:
         return ""
 
-    client = Client(APP_KEY, APP_SECRET, CALLBACK_URL, user['access_token'], user['expires_in'])
+    client = Client(APP_KEY, APP_SECRET, CALLBACK_URL, access_token=user['access_token'], expires_at=user['expires_in'])
     id = request.args.get('id', '')
     since_id = request.args.get('since_id', 0)
 
@@ -258,17 +258,14 @@ def graph():
 @app.route('/suggest', methods=['GET'])
 def suggest():
     user = login_user(session)
+    query = request.args.get('query', '')
     if user:
-        query = request.args.get('query', '')
-        client = Client(APP_KEY, APP_SECRET, CALLBACK_URL, user['access_token'], user['expires_in'])
+        client = Client(APP_KEY, APP_SECRET, CALLBACK_URL, access_token=user['access_token'], expires_at=user['expires_in'])
 
-        try:
-            results = []
-            for s in client.get('search/suggestions/at_users', q=query, type=0, count=10):
-                results.append(s['nickname'])
-            return json.dumps({'query': query, 'suggestions': results})
-        except:
-            raise
+        results = []
+        for s in client.get('search/suggestions/at_users', q=query, type=0, count=10):
+            results.append(s['nickname'])
+        return json.dumps({'query': query, 'suggestions': results})
 
     return json.dumps({'query': query, 'suggestions': []})
 
