@@ -20,6 +20,8 @@ import re
 
 
 app = Flask(__name__)
+app.config['MONGO_USERNAME'] = 'simple'
+app.config['MONGO_PASSWORD'] = 'simple'
 mongo = PyMongo(app)
 weibo2db = Weibo2Db()
 r = redis.Redis('localhost', 6379)
