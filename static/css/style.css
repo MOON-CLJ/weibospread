@@ -167,7 +167,7 @@ input, button, select, textarea {
   color: #0388A6; 
 }
 
-.sinalogin a{ width:86px; height:18px;  background:url(../../loginbtn_04.png); text-decoration:none; background:red;}
+.sinalogin a{ width:86px; height:18px;  background:url(../../weibo-login.png); text-decoration:none; background:red;}
 
 #home {border:1px solid #dddddd; border-radius:4px; background:#fff; }
 #home:hover{ border:1px solid #cccccc; cursor:pointer; color:#ccc; background:#fff; }
