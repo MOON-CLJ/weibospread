@@ -7,8 +7,8 @@ from weibo import Client
 from gexf import Gexf
 from lxml import etree
 from gen import Tree
-from utils4scrapy.weibo2db import Weibo2Db
-from utils4scrapy.utils import load_reposts
+from weibo2db import Weibo2Db
+from utils import load_reposts
 from utils4scrapy import base62
 import buchheim
 import math
