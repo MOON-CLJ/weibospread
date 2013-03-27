@@ -1,4 +1,4 @@
-{% extends "layout.html" %}
+{% extends 'master.html' %}
 {% block body %}
   <script>
     var options, a;
@@ -15,8 +15,8 @@
             <input class="xlarge" id="query" name="q" type="text" placeholder="请输入微博昵称..." value="" role="textbox">
             <button class="btn btn-large btn-inverse" id="artist_submit" type="submit"><i class="icon-search icon-white"></i></button>
           </form>
-	</li>
+    </li>
       </ul>
     </div>
-  </div> <!-- /container -->
+  </div>
 {% endblock %}
