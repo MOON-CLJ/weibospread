@@ -3,4 +3,4 @@
 *.pyc
 *.log
 .DS_Store
-
+.ropeproject
