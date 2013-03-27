@@ -28,12 +28,14 @@ def resp2item(resp):
         raise DropItem('reposts_count')
 
     for k in WeiboItem.RESP_ITER_KEYS:
-        weibo[k] = resp[k]
+        if k in resp:
+            weibo[k] = resp[k]
 
     weibo['timestamp'] = local2unix(weibo['created_at'])
 
     for k in UserItem.RESP_ITER_KEYS:
-        user[k] = resp['user'][k]
+        if k in resp['user']:
+            user[k] = resp['user'][k]
 
     weibo['user'] = user
 
@@ -43,11 +45,13 @@ def resp2item(resp):
         retweeted_user = UserItem()
 
         for k in WeiboItem.RESP_ITER_KEYS:
-            retweeted_status[k] = resp['retweeted_status'][k]
+            if k in resp['retweeted_status']:
+                retweeted_status[k] = resp['retweeted_status'][k]
         retweeted_status['timestamp'] = local2unix(retweeted_status['created_at'])
 
         for k in UserItem.RESP_ITER_KEYS:
-            retweeted_user[k] = resp['retweeted_status']['user'][k]
+            if k in resp['retweeted_status']['user']:
+                retweeted_user[k] = resp['retweeted_status']['user'][k]
 
         retweeted_status['user'] = retweeted_user
         weibo['retweeted_status'] = retweeted_status
