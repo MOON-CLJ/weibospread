@@ -1,0 +1,19 @@
+{% macro paginate(has_prev, has_next, page, page_url) %}
+{% if has_prev or has_next %}
+<div class="pagination">
+
+{% if has_prev %}
+<span class="previous">
+    <a href="{{ page_url(page - 1) }}"> &larr; newer </a>
+</span>
+{% endif %}
+
+{% if has_next %}
+<span class="next">
+    <a href="{{ page_url(page + 1) }}"> older &rarr; </a>
+</span>
+{% endif %}
+
+</div>
+{% endif %}
+{% endmacro %}

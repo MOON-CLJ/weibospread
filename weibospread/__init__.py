@@ -10,10 +10,9 @@ APP_NAME = 'simple'
 HOST = '0.0.0.0'
 PORT = 8080
 
-
 MODULES = (
     (views.simple, ''),
-    #(views.account, '/account'),
+    (views.search, '/search'),
 )
 
 
