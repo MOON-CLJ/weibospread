@@ -35,7 +35,7 @@
                     <a href="/"><img src="{% if profile_image_url %} {{ profile_image_url }} {% endif %}" alt="userpic" width=25px height=25px></a>
                 </div>
                 <div id="sinalogin" class="sinalogin" style="display:{{ btnloginvisible }};">
-                    <a href="{{ url }}"><img src="../static/weibo-login.png" alt="微博登录"></a>
+                    <a href="{{ url }}"><img src="{{ url_for('static', filename='img/weibo-login.png') }}" alt="微博登录"></a>
                 </div>
             </div>
 

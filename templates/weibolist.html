@@ -42,6 +42,8 @@
             </div>
         </div>
         {%- endif %}
-        {{ paginate(has_prev, has_next, page, page_url) }}
+        <div id="p_nav">
+            {{ paginate(has_prev, has_next, page, page_url) }}
+        </div>
     </div>
 {% endblock %}

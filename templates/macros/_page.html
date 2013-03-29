@@ -4,13 +4,13 @@
 
 {% if has_prev %}
 <span class="previous">
-    <a href="{{ page_url(page - 1) }}"> &larr; newer </a>
+    <a href="{{ page_url(page - 1) }}"> &larr; 上一页</a>
 </span>
 {% endif %}
 
 {% if has_next %}
 <span class="next">
-    <a href="{{ page_url(page + 1) }}"> older &rarr; </a>
+    <a href="{{ page_url(page + 1) }}"> 下一页 &rarr; </a>
 </span>
 {% endif %}
 
