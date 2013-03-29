@@ -7,13 +7,13 @@
             {%- if tar_location %}
                 <p>
                 <img src="{{ tar_profile_image_url }}" />
-                    <a href="/search?q={{ tar_screen_name }}">{{ tar_screen_name }}</a>
+                    <a href="{{ page_url(page) }}">{{ tar_screen_name }}</a>
                     {{ tar_location }}
                 </img>
                 </p>
             {%- endif %}
-            <form action="/search">
-                <input name="t" type="text" placeholder="搜索此用户最近的微博">
+            <form action="{{ page_url(page) }}">
+                <input name="q" type="text" placeholder="搜索此用户最近的微博">
             </form>
         </div>
 

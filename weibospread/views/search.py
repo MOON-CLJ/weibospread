@@ -32,22 +32,47 @@ def index():
 @require_login
 def weibos_by_uid_and_page(uid, page=1):
     user = login_user(session)
-    client = get_client(user['access_token'], user['expires_in'])
+    q = request.args.get('q', '')
+    q = q.strip('@ \r\n\t')
+    auto_redirect = request.args.get('auto_redirect')
+    if auto_redirect:
+        auto_redirect = int(auto_redirect)
 
     target_user = mongo.db.all_visited_users.find_one({'id': uid})
     tar_screen_name = target_user['screen_name']
     tar_profile_image_url = target_user['profile_image_url']
     tar_location = target_user['location']
 
-    try:
-        statuses = client.get('statuses/user_timeline', uid=uid, count=50, page=page)['statuses']
-        items = []
-        for status in statuses:
-            items.extend(resp2item_v2(status))
-        items2mongo(items)
-    except:
-        flash(u'获取微博信息失败,请刷新')
+    if q and auto_redirect and auto_redirect > 3:
         statuses = []
+    else:
+        try:
+            client = get_client(user['access_token'], user['expires_in'])
+            statuses = client.get('statuses/user_timeline', uid=uid, count=50, page=page)['statuses']
+            items = []
+            for status in statuses:
+                items.extend(resp2item_v2(status))
+            items2mongo(items)
+            if q:
+                temp_statuses = []
+                for status in statuses:
+                    if ('text' in status and q in status['text']) or ('retweeted_status' in status and q in status['retweeted_status']['text']):
+                        temp_statuses.append(status)
+                statuses = temp_statuses
+                if statuses == []:
+                    page += 1
+                    if auto_redirect:
+                        auto_redirect += 1
+                    else:
+                        auto_redirect = 1
+                    return redirect(url_for('search.weibos_by_uid_and_page', uid=uid,
+                                    page=page) + '?q=%s&auto_redirect=%s' % (q, auto_redirect))
+        except:
+            flash(u'获取微博信息失败,请刷新')
+            statuses = []
+
+    if statuses == []:
+        flash(u'没有搜索到相关微博,请尝试下一页或者采用其他关键词')
 
     for i in xrange(len(statuses)):
         weibo_url = base62.weiboinfo2url(statuses[i]['user']['id'], statuses[i]['mid'])
