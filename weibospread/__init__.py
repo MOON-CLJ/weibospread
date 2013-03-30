@@ -13,6 +13,7 @@ PORT = 8080
 MODULES = (
     (views.simple, ''),
     (views.search, '/search'),
+    (views.suggest, '/suggest'),
 )
 
 

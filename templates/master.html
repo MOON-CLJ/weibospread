@@ -57,11 +57,13 @@
             {% block body %}{% endblock %}
         </div>
     {% endblock %}
+    <script src="{{ url_for('static', filename='js/jquery.min.js') }}" type="text/javascript"></script>
     <script src="{{ url_for('static', filename='bootstrap/js/bootstrap.min.js') }}" type="text/javascript"></script>
     <script src="{{ url_for('static', filename='js/sigma.min.js') }}" type="text/javascript"></script>
-    <script src="{{ url_for('static', filename='js/jquery.min.js') }}" type="text/javascript"></script>
     <script src="{{ url_for('static', filename='js/jquery.autocomplete.js') }}" type="text/javascript"></script>
     <script src="{{ url_for('static', filename='js/sigma.parseGexf.js') }}" type="text/javascript"></script>
+    {% block script %}
+    {% endblock %}
 
     {% block tail %}
     {% endblock %}
