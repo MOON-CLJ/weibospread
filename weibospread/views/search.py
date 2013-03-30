@@ -22,7 +22,7 @@ def index():
         items2mongo(resp2item_v2(target_user))
 
         return redirect(url_for('search.weibos_by_uid_and_page', uid=target_user['id']))
-    except:
+    except RuntimeError:
         flash(u'您输入的昵称不存在,请重新输入')
         return redirect(url_for('simple.index'))
 
@@ -67,7 +67,7 @@ def weibos_by_uid_and_page(uid, page=1):
                         auto_redirect = 1
                     return redirect(url_for('search.weibos_by_uid_and_page', uid=uid,
                                     page=page) + '?q=%s&auto_redirect=%s' % (q, auto_redirect))
-        except:
+        except RuntimeError:
             flash(u'获取微博信息失败,请刷新')
             statuses = []
 
