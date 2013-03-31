@@ -29,7 +29,7 @@
     font-size:150%;
 }
 .selected{
-  font-weight:bold;  
+  font-weight:bold;
 }
 
 
@@ -206,4 +206,21 @@ input, button, select, textarea {
   background-color: #D9EDF7;
   border-color: #BCE8F1;
   color: #3A87AD;
+}
+
+body .modal {
+  height: 90%;
+  width: 90%; /* desired relative width */
+  left: 5%; /* (100%-width)/2 */
+  margin-left:auto;
+  margin-right:auto;
+}
+
+.modal-body {
+    height: 90%;
+    max-height: 90%;
+}
+
+body .modal.fade.in {
+  top: 5%; /* fade in to correct spot */
 }

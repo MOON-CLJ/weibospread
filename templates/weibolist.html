@@ -1,49 +1,164 @@
 {% extends "master.html" %}
 {% from "macros/_page.html" import paginate %}
 
+{% block head %}
+    <style type="text/css">
+        /* sigma.js context : */
+        .sigma-parent {
+            position: relative;
+            border-radius: 4px;
+            -moz-border-radius: 4px;
+            -webkit-border-radius: 4px;
+            background: #222;
+            height: 100%;
+        }
+        .sigma-expand {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+        }
+    </style>
+{% endblock %}
+
 {% block body %}
-    <div class="container">
-        <div id="user">
-            {%- if tar_location %}
-                <p>
-                <img src="{{ tar_profile_image_url }}" />
-                    <a href="{{ page_url(page) }}">{{ tar_screen_name }}</a>
-                    {{ tar_location }}
-                </img>
-                </p>
-            {%- endif %}
-            <form action="{{ page_url(page) }}">
-                <input name="q" type="text" placeholder="搜索此用户最近的微博">
-            </form>
-        </div>
-
-        {%- if statuses %}
-        <div id="weibos">
-            <div class="wb-k">
-                {%- for status in statuses %}
-                <div class="highlightText">
-                    <a href="/graph?id={{ status.id }}">
-                        <h4 class="statustitle">{{ status.text }}</h4>
-                    </a>
-                    <p class="ct-tags">
-                        <a href="{{ status.weibo_url }}" class="ct-tags">去新浪微博</a>
-                        <a href="/graph?id={{ status.id }}" class="ct-tags">此微博图谱</a>
-                        {%- if "retweeted_status" in status %}
-                            <a href="/graph?id={{ status.retweeted_status.id }}" class="ct-tags">源微博图谱</a>
-                        {%- endif %}
-                    </p>
-
-                    {%- if "retweeted_status" in status %}
-                    <p class="statuscontent">{{ status.retweeted_status.text }}</p>
-                    {%- endif %}
-                    <h4 class="repostcount">转发:{{ status.reposts_count }} 评论:{{ status.comments_count }}</h4>
-                </div>
-                {%- endfor %}
-            </div>
-        </div>
+    <div id="user">
+        {%- if tar_location %}
+            <p>
+            <img src="{{ tar_profile_image_url }}" />
+                <a href="{{ page_url(page) }}">{{ tar_screen_name }}</a>
+                {{ tar_location }}
+            </img>
+            </p>
         {%- endif %}
-        <div id="p_nav">
-            {{ paginate(has_prev, has_next, page, page_url) }}
+        <form action="{{ page_url(page) }}">
+            <input name="q" type="text" placeholder="搜索此用户最近的微博">
+        </form>
+    </div>
+
+    {%- if statuses %}
+    <div id="weibos">
+        <div class="wb-k">
+            {%- for status in statuses %}
+            <div class="highlightText">
+                <a href="#" data-subject-id="{{ status.id }}" class="ct-tags">
+                    <h4 class="statustitle">{{ status.text }}</h4>
+                </a>
+                <p>
+                    <a href="{{ status.weibo_url }}" class="ct-tags">去新浪微博</a>
+                    <a href="#" data-subject-id="{{ status.id }}" class="ct-tags">此微博图谱</a>
+                    {%- if "retweeted_status" in status %}
+                        <a href="#" data-subject-id="{{ status.retweeted_status.id }}" class="ct-tags">源微博图谱</a>
+                    {%- endif %}
+                </p>
+
+                {%- if "retweeted_status" in status %}
+                <p class="statuscontent">{{ status.retweeted_status.text }}</p>
+                {%- endif %}
+                <h4 class="repostcount">转发:{{ status.reposts_count }} 评论:{{ status.comments_count }}</h4>
+            </div>
+            {%- endfor %}
         </div>
     </div>
+    {%- endif %}
+    <div id="p_nav">
+        {{ paginate(has_prev, has_next, page, page_url) }}
+    </div>
+    <div class="modal fade hide" id="graphModal">
+        <div class="modal-header">
+            <a class="close" data-dismiss="modal">&times;</a>
+            <h3>图谱</h3>
+        </div>
+        <div class="modal-body">
+            <div class="sigma-parent">
+                <div class="sigma-expand" id="sigma">
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block script %}
+<script>
+    $(function(){
+        $('body').delegate('.ct-tags', 'click', function(e){
+            $('#sigma').html('');
+            $this = $(e.target);
+            var id = $this.data('subject-id');
+            $('#graphModal').modal('show');
+            init(id);
+        });
+    })
+
+    var init = function (id) {
+        var sigInst = sigma.init($('#sigma')[0]).drawingProperties({
+            defaultLabelColor: '#fff'
+        }).graphProperties({
+            minNodeSize: 0.5,
+            maxNodeSize: 5
+        });
+
+        // (requires "sigma.parseGexf.js" to be executed)
+        sigInst.parseGexf('/graph/' + id + '/');
+
+        (function(){
+            var popUp;
+
+            function attributesToString(attr) {
+                return '<ul>' +
+                    attr.map(function(o){
+                        if (o.attr == "img_url") {
+                            return '<img src="' + o.val +'" >'
+                        }
+                        if (o.attr == "weibo_url") {
+                            return '<a href="' + o.val +'" target="_blank" >点击访问此微博</a>'
+                        }
+                        return '<li>' + o.attr + ' : ' + o.val + '</li>';
+                    }).join('') +
+                '</ul>';
+            }
+
+            function showNodeInfo(event) {
+                popUp && popUp.remove();
+
+                var node;
+                sigInst.iterNodes(function(n){
+                    node = n;
+                },[event.content[0]]);
+
+                popUp = $(
+                    '<div class="node-info-popup"></div>'
+                ).append(
+                    attributesToString( node['attr']['attributes'] )
+                ).attr(
+                    'id',
+                    'node-info'+sigInst.getID()
+                ).mouseleave(
+                    hideNodeInfo
+                ).css({
+                    'display': 'inline-block',
+                    'border-radius': 3,
+                    'padding': 5,
+                    'background': '#fff',
+                    'color': '#000',
+                    'box-shadow': '0 0 4px #666',
+                    'position': 'absolute',
+                    'left': node.displayX,
+                    'top': node.displayY+15
+               });
+
+               $('ul',popUp).css('margin','0 0 0 20px');
+               $('#sigma').append(popUp);
+            }
+
+            function hideNodeInfo(event) {
+                popUp && popUp.remove();
+                popUp = false;
+            }
+
+            sigInst.bind('overnodes',showNodeInfo).draw();
+        })();
+    }
+</script>
 {% endblock %}

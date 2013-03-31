@@ -7,7 +7,7 @@ from utils4scrapy.items import WeiboItem
 from utils4scrapy import base62
 from gexf import Gexf
 from lxml import etree
-from gen import Tree
+from weibospread.gen import Tree
 from weibospread import buchheim
 import math
 import re
@@ -107,7 +107,7 @@ def tree2graph(tree_nodes):
 
     add_node_and_edge(dt, graph, Count(), max_width=max_width)
 
-    return etree.tostring(gexf.getXML(), pretty_print=False, encoding='utf-8', xml_declaration=True)
+    return etree.tostring(gexf.getXML(), pretty_print=True, encoding='utf-8', xml_declaration=True)
 
 
 @graph.route('/<int:mid>/')
@@ -136,6 +136,7 @@ def index(mid, page=None):
         reposts = client.get('statuses/repost_timeline', id=mid,
                              count=200, page=page)['reposts']
 
+        print 'origin', len(reposts)
         # 如果reposts为空，且是最开始访问的一页，有可能是页数多算了一页,直接将页数减一页跳转
         if reposts == [] and total_page > 1 and page == total_page:
             return redirect(url_for('graph.index', mid=mid, page=page - 1))
@@ -144,7 +145,7 @@ def index(mid, page=None):
             items.extend(resp2item_v2(repost))
         items2mongo(items)
         for item in items:
-            if isinstance(item, WeiboItem):
+            if isinstance(item, WeiboItem) and item['id'] != source_weibo['id']:
                 item = item.to_dict()
                 item['source_weibo'] = source_weibo['id']
                 mongo.db.all_repost_weibos.update({'id': item['id']}, item, upsert=True)
