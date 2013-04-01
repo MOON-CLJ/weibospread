@@ -107,7 +107,7 @@ def tree2graph(tree_nodes):
 
     add_node_and_edge(dt, graph, Count(), max_width=max_width)
 
-    return etree.tostring(gexf.getXML(), pretty_print=True, encoding='utf-8', xml_declaration=True)
+    return etree.tostring(gexf.getXML(), pretty_print=False, encoding='utf-8', xml_declaration=True)
 
 
 @graph.route('/<int:mid>/')
@@ -136,7 +136,6 @@ def index(mid, page=None):
         reposts = client.get('statuses/repost_timeline', id=mid,
                              count=200, page=page)['reposts']
 
-        print 'origin', len(reposts)
         # 如果reposts为空，且是最开始访问的一页，有可能是页数多算了一页,直接将页数减一页跳转
         if reposts == [] and total_page > 1 and page == total_page:
             return redirect(url_for('graph.index', mid=mid, page=page - 1))

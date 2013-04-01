@@ -86,8 +86,11 @@
             $('#sigma').html('');
             $this = $(e.target);
             var id = $this.data('subject-id');
+
+            $('#graphModal').on('shown', function () {
+                init(id);
+            })
             $('#graphModal').modal('show');
-            init(id);
         });
     })
 
