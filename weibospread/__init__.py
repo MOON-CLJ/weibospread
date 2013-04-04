@@ -15,6 +15,7 @@ MODULES = (
     (views.search, '/search'),
     (views.suggest, '/suggest'),
     (views.graph, '/graph'),
+    (views.show_graph, '/show_graph'),
 )
 
 

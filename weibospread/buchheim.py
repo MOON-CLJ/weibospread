@@ -49,7 +49,7 @@ def buchheim(tree):
     else:
         third_walk(dt, max_depth*0.5, None)
 
-    return dt, max_width
+    return dt, max_depth, max_width
 
 def third_walk(tree, m, n=None):
     if n is not None:
