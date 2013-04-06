@@ -16,6 +16,7 @@ MODULES = (
     (views.suggest, '/suggest'),
     (views.graph, '/graph'),
     (views.show_graph, '/show_graph'),
+    (views.tree_stats, '/tree_stats'),
 )
 
 

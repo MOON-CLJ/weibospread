@@ -5,3 +5,4 @@ from .search import search
 from .suggest import suggest
 from .graph import graph
 from .show_graph import show_graph
+from .tree_stats import tree_stats

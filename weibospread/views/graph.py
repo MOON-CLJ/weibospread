@@ -190,5 +190,9 @@ def index(mid, page=None):
     graph, max_depth, max_width = tree2graph(tree)
     tree_stats['max_depth'] = max_depth
     tree_stats['max_width'] = max_width
-    print tree_stats
+
+    # 存储转发状态
+    tree_stats['id'] = mid
+    tree_stats['page'] = page
+    mongo.db.tree_stats.update({'id': mid, 'page': page}, tree_stats, upsert=True, w=1)
     return graph

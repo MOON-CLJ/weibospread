@@ -20,7 +20,32 @@
     </style>
 {% endblock %}
 {% block body %}
-    <h3>图谱</h3>
+    <div class="row">
+        <div class="span1">
+            <h4>图谱</h4>
+        </div>
+        <div class="span2">
+            <h5>转发数(包括但不限于下图)</h5><h5 id="reposts-count"></h5>
+        </div>
+        <div class="span1">
+            <h5>|<h5><h5>|<h5>
+        </div>
+        <div class="span1">
+            <h5>参与人数</h5><h5 id="repost-people-count"></h5>
+        </div>
+         <div class="span1">
+            <h5>宽度</h5><h5 id="max-width"></h5>
+        </div>
+        <div class="span1">
+            <h5>深度</h5><h5 id="max-depth"></h5>
+        </div>
+        <div class="span2">
+            <h5>开始时间</h5><h5 id="spread-begin"></h5>
+        </div>
+        <div class="span2">
+            <h5>截止时间</h5><h5 id="spread-end"></h5>
+        </div>
+    </div>
     {%- if page > 1 %}
         <a href="{{ url_for('show_graph.index', mid=mid, page=page-1) }}">更多&rarr;</a>
     {%- endif %}
@@ -45,6 +70,18 @@
 
         // (requires "sigma.parseGexf.js" to be executed)
         sigInst.parseGexf("{{ url_for('graph.index', mid=mid, page=page) }}");
+        $.ajax({
+            url: "{{ url_for('tree_stats.index', mid=mid, page=page) }}",
+            success: function( data ) {
+                var stats = data["stats"];
+                $( "#reposts-count" ).html( stats['reposts_count'] );
+                $( "#repost-people-count" ).html( stats['repost_people_count'] );
+                $( "#max-width" ).html( stats['max_width'] );
+                $( "#max-depth" ).html( stats['max_depth'] );
+                $( "#spread-begin" ).html( stats['spread_begin'] );
+                $( "#spread-end" ).html( stats['spread_end'] );
+            }
+        });
 
         (function(){
             var popUp;
