@@ -49,4 +49,4 @@ def get_client(access_token=None, expires_at=None):
 def items2mongo(items):
     pipeline = MongodbPipeline()
     for item in items:
-        pipeline.process_item(item, spider=None)
+        pipeline.process_item_sync(item, spider=None)
